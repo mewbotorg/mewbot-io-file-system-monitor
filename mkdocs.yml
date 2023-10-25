@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2023 Mewbot Developers <mewbot@quicksilver.london>
+#
+# SPDX-License-Identifier: BSD-2-Clause
+
+site_name: cookiecutter-mewbot-plugin
+site_description: Minimal Cookiecutter template for authoring mewbot plugins.
+site_author: Alex Cameron
+
+theme: readthedocs
+
+repo_url: https://github.com/mewbotorg/cookiecutter-mewbot-plugin
+
+pages:
+- Home: index.md
+- User Guide:
+    - Quickstart: user-guide/quickstart.md
+    - Publish: user-guide/publish-plugin.md
+- Contributor Guide:
+    - Quickstart: contributor-guide/quickstart.md
+    - Documentation: contributor-guide/documentation.md

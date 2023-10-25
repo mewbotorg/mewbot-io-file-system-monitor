@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2023 Mewbot Developers <mewbot@quicksilver.london>
+#
+# SPDX-License-Identifier: BSD-2-Clause
+
+include LICENSE.md
+include README.rst
+
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
