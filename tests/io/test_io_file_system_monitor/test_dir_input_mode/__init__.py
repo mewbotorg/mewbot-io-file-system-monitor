@@ -3,6 +3,5 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 """
-Events which your IOConfig can produce/consume.
+Needed a package for relative import of utils here.
 """
-

@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: BSD-2-Clause
 
-# -*- coding: utf-8 -*-
-
 """
-Contains tests for mewbot-file-system-monitor.
+Example which triggers a desktop notification when a new meme is added to a dir.
 """
