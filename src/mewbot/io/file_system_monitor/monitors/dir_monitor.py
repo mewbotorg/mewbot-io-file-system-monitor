@@ -20,9 +20,6 @@ import pathlib
 import aiopath  # type: ignore
 import watchdog
 from mewbot.core import InputEvent
-from watchdog.events import FileSystemEvent, FileSystemEventHandler
-from watchdog.observers import Observer
-from watchdog.observers.api import BaseObserver
 
 from mewbot.io.file_system_monitor.fs_events import (
     DirCreatedWithinWatchedDirFSInputEvent,
@@ -38,6 +35,11 @@ from mewbot.io.file_system_monitor.fs_events import (
     FileMovedWithinWatchedDirFSInputEvent,
     FileUpdatedWithinWatchedDirFSInputEvent,
     FSInputEvent,
+)
+from mewbot.io.file_system_monitor.monitors.external_apis import (
+    WatchdogBaseObserver,
+    WatchdogFileSystemEvent,
+    WatchdogFileSystemEventHandler,
 )
 
 
@@ -59,9 +61,9 @@ class LinuxFileSystemObserver:
 
     _logger: logging.Logger
 
-    _watchdog_observer: BaseObserver = Observer()
+    _watchdog_observer: WatchdogBaseObserver = watchdog.observers.Observer()
 
-    _internal_queue: asyncio.Queue[FileSystemEvent]
+    _internal_queue: asyncio.Queue[WatchdogFileSystemEvent]
 
     def __init__(
         self, output_queue: Optional[asyncio.Queue[InputEvent]], input_path: str
@@ -154,7 +156,7 @@ class LinuxFileSystemObserver:
 
         await self._output_queue.put(event)
 
-    async def _process_event_from_watched_dir(self, event: FileSystemEvent) -> None:
+    async def _process_event_from_watched_dir(self, event: WatchdogFileSystemEvent) -> None:
         """
         Take an event and process it before putting it on the wire.
         """
@@ -193,7 +195,7 @@ class LinuxFileSystemObserver:
         """
         handler = _EventHandler(queue=self._internal_queue, loop=asyncio.get_event_loop())
 
-        self._watchdog_observer = Observer()
+        self._watchdog_observer = watchdog.observers.Observer()
         self._watchdog_observer.schedule(  # type: ignore
             event_handler=handler, path=self._input_path, recursive=True
         )
@@ -210,7 +212,9 @@ class LinuxFileSystemObserver:
         except RuntimeError:  # Can happen when the shutdown is not clean
             return
 
-    async def _process_file_event_from_within_dir(self, event: FileSystemEvent) -> None:
+    async def _process_file_event_from_within_dir(
+        self, event: WatchdogFileSystemEvent
+    ) -> None:
         """
         Take a file event and process it before putting it on the wire.
         """
@@ -409,7 +413,9 @@ class LinuxFileSystemObserver:
             )
         )
 
-    async def _process_dir_event_from_within_dir(self, event: FileSystemEvent) -> None:
+    async def _process_dir_event_from_within_dir(
+        self, event: WatchdogFileSystemEvent
+    ) -> None:
         """
         Take an event and process it before putting it on the wire.
 
@@ -688,7 +694,9 @@ class WindowsFileSystemObserver(LinuxFileSystemObserver):
 
         return await super()._process_file_delete_event(event)
 
-    async def _process_dir_event_from_within_dir(self, event: FileSystemEvent) -> None:
+    async def _process_dir_event_from_within_dir(
+        self, event: WatchdogFileSystemEvent
+    ) -> None:
         """
         Take an event and process it before putting it on the wire.
         """
@@ -721,17 +729,17 @@ class WindowsFileSystemObserver(LinuxFileSystemObserver):
         raise NotImplementedError(f"{event} had unexpected form.")
 
 
-class _EventHandler(FileSystemEventHandler):
+class _EventHandler(WatchdogFileSystemEventHandler):
     """
     Produces events when file system changes are detected.
     """
 
     _loop: asyncio.AbstractEventLoop
-    _queue: asyncio.Queue[FileSystemEvent]
+    _queue: asyncio.Queue[WatchdogFileSystemEvent]
 
     def __init__(
         self,
-        queue: asyncio.Queue[FileSystemEvent],
+        queue: asyncio.Queue[WatchdogFileSystemEvent],
         loop: asyncio.AbstractEventLoop,
         *args: Any,
         **kwargs: Any,
@@ -748,7 +756,7 @@ class _EventHandler(FileSystemEventHandler):
         self._queue = queue
         super().__init__(*args, **kwargs)
 
-    def on_any_event(self, event: FileSystemEvent) -> None:
+    def on_any_event(self, event: WatchdogFileSystemEvent) -> None:
         """
         All events are of interest - filtering can happen at the Behavior level.
 

@@ -13,9 +13,9 @@ from typing import Optional, Union
 import dataclasses
 from pathlib import Path
 
+import watchdog
 import watchfiles
 from mewbot.api.v1 import InputEvent
-from watchdog.events import FileSystemEvent
 
 
 @dataclasses.dataclass
@@ -25,7 +25,9 @@ class FSInputEvent(InputEvent):
     """
 
     # equivalent to FileSystemEvent, tuple[watchfiles.Change, str], None]
-    base_event: Optional[Union[FileSystemEvent, tuple[watchfiles.Change, str]]]
+    base_event: Optional[
+        Union[watchdog.events.FileSystemEvent, tuple[watchfiles.Change, str]]
+    ]
 
 
 #
