@@ -14,9 +14,8 @@ import dataclasses
 from pathlib import Path
 
 import watchfiles
-from watchdog.events import FileSystemEvent
-
 from mewbot.api.v1 import InputEvent
+from watchdog.events import FileSystemEvent
 
 
 @dataclasses.dataclass

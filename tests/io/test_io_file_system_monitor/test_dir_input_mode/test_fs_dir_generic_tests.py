@@ -371,6 +371,7 @@ class TestDirTypeFSInputGenericTests(
                 )
             )
 
+            # Write a bad event onto the wire - to trigger an exception which should be handled
             test_fs_input.file_system_observer._input_path = None
             run_task_6 = asyncio.get_running_loop().create_task(
                 test_fs_input.file_system_observer._process_file_move_event(

@@ -13,6 +13,7 @@ from __future__ import annotations
 from typing import Optional, Sequence, Union
 
 from mewbot.api.v1 import Input, IOConfig, Output
+
 from mewbot.io.file_system_monitor.fs_events import (
     DirCreatedAtWatchLocationFSInputEvent,
     DirCreatedWithinWatchedDirFSInputEvent,

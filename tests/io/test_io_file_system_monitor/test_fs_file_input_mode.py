@@ -17,8 +17,8 @@ import tempfile
 import uuid
 
 import pytest
-
 from mewbot.api.v1 import InputEvent
+
 from mewbot.io.file_system_monitor import FileTypeFSInput
 from mewbot.io.file_system_monitor.fs_events import (
     FileCreatedAtWatchLocationFSInputEvent,

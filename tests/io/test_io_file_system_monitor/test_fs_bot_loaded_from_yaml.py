@@ -14,8 +14,9 @@ import os.path
 import tempfile
 
 from mewbot.api.v1 import IOConfig
-from mewbot.io.file_system_monitor import FileSystemMonitorIO
 from mewbot.test import BaseTestClassWithConfig
+
+from mewbot.io.file_system_monitor import FileSystemMonitorIO
 
 # pylint: disable=R0903
 #  Disable "too few public methods" for test cases - most test files will be classes used for

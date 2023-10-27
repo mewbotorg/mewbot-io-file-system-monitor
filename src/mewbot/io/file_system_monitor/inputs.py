@@ -18,8 +18,8 @@ import sys
 
 import aiopath  # type: ignore
 import watchfiles
-
 from mewbot.api.v1 import Input, InputEvent
+
 from mewbot.io.file_system_monitor.fs_events import (
     DirCreatedAtWatchLocationFSInputEvent,
     DirCreatedWithinWatchedDirFSInputEvent,

@@ -17,8 +17,8 @@ import logging
 
 import aiopath  # type: ignore
 import watchfiles
-
 from mewbot.core import InputQueue
+
 from mewbot.io.file_system_monitor.fs_events import (
     FileCreatedAtWatchLocationFSInputEvent,
     FileDeletedFromWatchLocationFSInputEvent,

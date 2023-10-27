@@ -1,3 +1,0 @@
-"""
-Experiencing a clash between
-"""

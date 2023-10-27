@@ -11,6 +11,7 @@ from typing import Any, List, Optional, Tuple, Type, Union
 import asyncio
 
 from mewbot.api.v1 import InputEvent
+
 from mewbot.io.file_system_monitor import DirTypeFSInput, FileTypeFSInput
 from mewbot.io.file_system_monitor.fs_events import (
     DirCreatedAtWatchLocationFSInputEvent,

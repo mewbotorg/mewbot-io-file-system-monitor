@@ -19,10 +19,11 @@ import pathlib
 
 import aiopath  # type: ignore
 import watchdog
+from mewbot.core import InputEvent
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
+from watchdog.observers.api import BaseObserver
 
-from mewbot.core import InputEvent
 from mewbot.io.file_system_monitor.fs_events import (
     DirCreatedWithinWatchedDirFSInputEvent,
     DirDeletedFromWatchedDirFSInputEvent,
@@ -58,7 +59,7 @@ class LinuxFileSystemObserver:
 
     _logger: logging.Logger
 
-    _watchdog_observer: Observer = Observer()
+    _watchdog_observer: BaseObserver = Observer()
 
     _internal_queue: asyncio.Queue[FileSystemEvent]
 
@@ -193,10 +194,10 @@ class LinuxFileSystemObserver:
         handler = _EventHandler(queue=self._internal_queue, loop=asyncio.get_event_loop())
 
         self._watchdog_observer = Observer()
-        self._watchdog_observer.schedule(
+        self._watchdog_observer.schedule(  # type: ignore
             event_handler=handler, path=self._input_path, recursive=True
         )
-        self._watchdog_observer.start()
+        self._watchdog_observer.start()  # type: ignore
 
         self._logger.info("Started _watchdog_observer")
 
@@ -720,7 +721,7 @@ class WindowsFileSystemObserver(LinuxFileSystemObserver):
         raise NotImplementedError(f"{event} had unexpected form.")
 
 
-class _EventHandler(FileSystemEventHandler):  # type: ignore
+class _EventHandler(FileSystemEventHandler):
     """
     Produces events when file system changes are detected.
     """

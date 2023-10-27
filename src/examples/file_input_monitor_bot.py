@@ -21,6 +21,7 @@ import logging
 
 from mewbot.api.v1 import Action, Trigger
 from mewbot.core import InputEvent, OutputEvent, OutputQueue
+
 from mewbot.io.file_system_monitor import (
     FileCreatedAtWatchLocationFSInputEvent,
     FileDeletedFromWatchLocationFSInputEvent,
