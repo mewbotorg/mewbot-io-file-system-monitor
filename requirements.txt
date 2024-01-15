@@ -8,5 +8,5 @@ mewbot-io~=0.0.3
 mewbot-test~=0.0.3
 
 watchdog~=3.0.0
-aiopath~=0.6.11
+aiopath~=0.7.7
 watchfiles~=0.21.0
