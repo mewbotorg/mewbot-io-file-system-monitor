@@ -37,7 +37,7 @@ jobs:
           RELEASE_VERSION: "${{ github.ref_name }}"
 
       - name: Archive installation artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: builds
           path: dist
