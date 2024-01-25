@@ -37,7 +37,7 @@ from mewbot.io.file_system_monitor.fs_events import (
 )
 from mewbot.io.file_system_monitor.inputs import DirTypeFSInput, FileTypeFSInput
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 
 __all__ = (
