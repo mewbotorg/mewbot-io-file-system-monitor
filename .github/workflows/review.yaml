@@ -108,7 +108,7 @@ jobs:
             requirements-dev.txt
 
       - name: Download Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         if: always()
         with:
           path: reports
@@ -136,14 +136,14 @@ jobs:
           fetch-depth: 0
 
       - name: Download Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         if: always()
         with:
           name: lint-results-${{ env.DEFAULT_OS }}-${{ env.DEFAULT_PYTHON }}
           path: reports
 
       - name: Download Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         if: always()
         with:
           name: test-results-${{ env.DEFAULT_OS }}-${{ env.DEFAULT_PYTHON }}
