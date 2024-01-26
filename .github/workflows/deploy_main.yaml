@@ -46,7 +46,7 @@ jobs:
         run: python -m build --sdist --wheel --outdir dist/
 
       - name: Archive installation artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: builds
           path: dist

@@ -11,6 +11,8 @@ Tests the dir input - monitors a directory for changes.
 """
 
 
+import typing
+
 import asyncio
 import ctypes
 import os
@@ -108,11 +110,12 @@ class TestDirTypeFSInputWindowsTests(
 
             file_attribute_hidden = 0x02
 
-            ctypes.windll.kernel32.SetFileAttributesW(tmp_dir_path, file_attribute_hidden)
+            if not typing.TYPE_CHECKING:
+                ctypes.windll.kernel32.SetFileAttributesW(tmp_dir_path, file_attribute_hidden)
 
-            await asyncio.sleep(5)
+                await asyncio.sleep(5)
 
-            new_path = os.path.join(tmp_dir_path, "test_dir")
-            os.mkdir(new_path)
+                new_path = os.path.join(tmp_dir_path, "test_dir")
+                os.mkdir(new_path)
 
-            ctypes.windll.kernel32.SetFileAttributesW(new_path, file_attribute_hidden)
+                ctypes.windll.kernel32.SetFileAttributesW(new_path, file_attribute_hidden)
