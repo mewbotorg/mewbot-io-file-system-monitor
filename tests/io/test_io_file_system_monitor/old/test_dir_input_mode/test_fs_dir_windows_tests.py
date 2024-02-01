@@ -19,7 +19,10 @@ import tempfile
 
 import pytest
 
-from ..fs_test_utils import FileSystemTestUtilsDirEvents, FileSystemTestUtilsFileEvents
+from tests.io.test_io_file_system_monitor.fs_test_utils import (
+    FileSystemTestUtilsDirEvents,
+    FileSystemTestUtilsFileEvents,
+)
 
 # pylint: disable=invalid-name
 # for clarity, test functions should be named after the things they test
