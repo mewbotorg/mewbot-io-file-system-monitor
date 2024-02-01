@@ -13,37 +13,24 @@ from __future__ import annotations
 from typing import Optional, Set, Union
 
 import asyncio
-import logging
 import os
-import pathlib
 
 import aiopath  # type: ignore
 import watchdog
 from mewbot.core import InputEvent
 
 from mewbot.io.file_system_monitor.fs_events import (
-    DirCreatedWithinWatchedDirFSInputEvent,
     DirDeletedFromWatchedDirFSInputEvent,
-    DirDeletedFromWatchLocationFSInputEvent,
-    DirMovedOutOfWatchedDirFSInputEvent,
     DirMovedWithinWatchedDirFSInputEvent,
     DirUpdatedAtWatchLocationFSInputEvent,
     DirUpdatedWithinWatchedDirFSInputEvent,
     FileCreatedWithinWatchedDirFSInputEvent,
     FileDeletedWithinWatchedDirFSInputEvent,
-    FileMovedOutsideWatchedDirFSInputEvent,
-    FileMovedWithinWatchedDirFSInputEvent,
-    FileUpdatedWithinWatchedDirFSInputEvent,
-    FSInputEvent,
 )
-from mewbot.io.file_system_monitor.monitors.dir_monitor.event_handler import (
-    MewbotEventHandler,
+from mewbot.io.file_system_monitor.monitors.dir_monitor.linux_file_system_observer import (
+    LinuxFileSystemObserver,
 )
-from mewbot.io.file_system_monitor.monitors.external_apis import (
-    WatchdogBaseObserver,
-    WatchdogFileSystemEvent,
-)
-from mewbot.io.file_system_monitor.monitors.dir_monitor.linux_file_system_observer import LinuxFileSystemObserver
+from mewbot.io.file_system_monitor.monitors.external_apis import WatchdogFileSystemEvent
 
 
 class WindowsFileSystemObserver(LinuxFileSystemObserver):

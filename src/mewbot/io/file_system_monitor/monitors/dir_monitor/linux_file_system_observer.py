@@ -10,11 +10,10 @@ As such, different classes are used for each of them.
 
 from __future__ import annotations
 
-from typing import Optional, Set, Union
+from typing import Optional, Union
 
 import asyncio
 import logging
-import os
 import pathlib
 
 import aiopath  # type: ignore

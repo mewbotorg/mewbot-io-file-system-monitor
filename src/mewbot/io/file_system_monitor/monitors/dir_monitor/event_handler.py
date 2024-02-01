@@ -14,7 +14,6 @@ from typing import Any
 
 import asyncio
 
-
 from mewbot.io.file_system_monitor.monitors.external_apis import (
     WatchdogFileSystemEvent,
     WatchdogFileSystemEventHandler,
