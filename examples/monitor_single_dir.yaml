@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2021 - 2023 Mewbot Developers <mewbot@quicksilver.london>
+#
+# SPDX-License-Identifier: CC-BY-4.0
+
+kind: IOConfig
+implementation: mewbot.io.file_system_monitor.FileSystemMonitorIO
+uuid: aaaaaaaa-aaaa-4aaa-0000-aaaaaaaaaa01
+properties:
+  input_path: "/mnt/c/mewbot/test_dir"
+  input_path_type: "dir"
+
+---
+
+kind: Behaviour
+implementation: mewbot.api.v1.Behaviour
+uuid: aaaaaaaa-aaaa-4aaa-0000-aaaaaaaaaa02
+properties:
+  name: 'Event Printer'
+triggers:
+  - kind: Trigger
+    implementation: mewbot.io.common.AllEventsTrigger
+    uuid: aaaaaaaa-aaaa-4aaa-0000-aaaaaaaaaa03
+    properties: { }
+  - kind: Trigger
+    implementation: mewbot.io.common.AllEventsTrigger
+    uuid: aaaaaaaa-aaaa-4aaa-0000-aaaaaaaaaa04
+    properties: { }
+conditions: []
+actions:
+  - kind: Action
+    implementation: fs_examples.dir_input_monitor_bot.DirSystemInputPrintResponse
+    uuid: aaaaaaaa-aaaa-4aaa-0000-aaaaaaaaaa05
+    properties: { }
