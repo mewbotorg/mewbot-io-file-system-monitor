@@ -27,13 +27,13 @@ from mewbot.io.file_system_monitor.fs_events import (
     FileCreatedWithinWatchedDirFSInputEvent,
     FileDeletedWithinWatchedDirFSInputEvent,
 )
-from mewbot.io.file_system_monitor.monitors.dir_monitor.linux_file_system_observer import (
-    LinuxFileSystemObserver,
+from mewbot.io.file_system_monitor.monitors.dir_monitor.linux_dir_observer import (
+    WatchdogLinuxFileSystemObserver,
 )
 from mewbot.io.file_system_monitor.monitors.external_apis import WatchdogFileSystemEvent
 
 
-class WindowsFileSystemObserver(LinuxFileSystemObserver):
+class WindowsFileSystemObserver(WatchdogLinuxFileSystemObserver):
     """
     Does the job of actually observing the file system.
 

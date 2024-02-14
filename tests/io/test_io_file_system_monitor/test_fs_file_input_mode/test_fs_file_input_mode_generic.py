@@ -162,6 +162,8 @@ class TestFileTypeFSInput(FileSystemTestUtilsDirEvents, FileSystemTestUtilsFileE
             with open(tmp_file_path, "w", encoding="utf-8") as test_outfile:
                 test_outfile.write(str(uuid.uuid4()))
 
+            await asyncio.sleep(0.5)
+
             await self.process_file_event_queue_response(
                 output_queue=output_queue, event_type=FileUpdatedAtWatchLocationFSInputEvent
             )

@@ -82,14 +82,16 @@ class FileTypeFSInput(Input, BaseFileMonitorMixin):
 
         self._logger = logging.getLogger(__name__ + ":" + type(self).__name__)
 
+        self._logger.info("Using file monitor mixin %s", BaseFileMonitorMixin)
+
         if input_path is None or not os.path.exists(input_path):
-            self.watcher = None
+            self.set_watcher(input_path)
             self._input_path_state.input_path_exists = False
             self._input_path_state.input_path_type = None
 
         # The only case where the watcher can actually start
         elif self._input_path_state.input_path is not None:  # needed to fool pylint
-            self.watcher = watchfiles.awatch(self._input_path_state.input_path)
+            self.set_watcher(input_path)
             self._input_path_state.input_path_exists = True
 
             if os.path.isdir(self._input_path_state.input_path):
@@ -99,6 +101,23 @@ class FileTypeFSInput(Input, BaseFileMonitorMixin):
 
         else:
             raise NotImplementedError
+
+    def set_watcher(self,  input_path: Optional[str] = None) -> None:
+        """
+        Set up the watcher.
+
+        :return:
+        """
+        if input_path is None or not os.path.exists(input_path):
+            self.watcher = None
+
+        # The only case where the watcher can actually start
+        elif self._input_path_state.input_path is not None:  # needed to fool pylint
+            self.watcher = watchfiles.awatch(self._input_path_state.input_path)
+
+        else:
+            raise NotImplementedError
+
 
     @staticmethod
     def produces_inputs() -> Set[Type[InputEvent]]:

@@ -10,7 +10,7 @@ As such, different classes are used for each of them.
 
 from __future__ import annotations
 
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import asyncio
 import logging
@@ -35,6 +35,14 @@ from mewbot.io.file_system_monitor.fs_events import (
     FileUpdatedWithinWatchedDirFSInputEvent,
     FSInputEvent,
 )
+from mewbot.io.file_system_monitor.mewbot_inotify.mewbot_inotify_recursive import (
+    Event,
+    INotify,
+    flags,
+)
+from mewbot.io.file_system_monitor.mewbot_inotify.mewbot_inotify_simple import (
+    flags,
+)
 from mewbot.io.file_system_monitor.monitors.dir_monitor.event_handler import (
     MewbotEventHandler,
 )
@@ -44,25 +52,17 @@ from mewbot.io.file_system_monitor.monitors.external_apis import (
 )
 
 
-class LinuxFileSystemObserver:
+class BaseLinuxFileSystemObserver:
     """
-    Base class for all observers defined on the system.
+    Base class for all linux based file system observers.
 
-    Basic program flow goes as follows
-     - Observer is provided with a location in a local file system
-     - Observer checks to see if there's something at that location
-     - if there is
-       - and it's a dir - start a dir observer
-       - and it's a file - start a file observer
-     - if there isn't, wait for there to be and start the appropriate observer
+    All two of em.
     """
 
     _output_queue: Optional[asyncio.Queue[InputEvent]]
     _input_path: Optional[str] = None
 
     _logger: logging.Logger
-
-    _watchdog_observer: WatchdogBaseObserver = watchdog.observers.Observer()
 
     _internal_queue: asyncio.Queue[WatchdogFileSystemEvent]
 
@@ -124,7 +124,7 @@ class LinuxFileSystemObserver:
         """
 
         if self._input_path is not None:
-            self.start_watchdog_on_dir()
+            self.start_watcher_on_dir()
         else:
             self._logger.warning("self._input_path is None in run - this should not happen")
             raise NotImplementedError(
@@ -156,6 +156,228 @@ class LinuxFileSystemObserver:
             return
 
         await self._output_queue.put(event)
+
+
+class INotifyFileSystemObserver(BaseLinuxFileSystemObserver):
+    """
+    As it turns out, watchdog is broken on linux systems - switching to inotify.
+
+    Watchdog is preserved - as it might be fixed in the future/work on some systems.
+    Also, it forms the base class for the Windows file system observer.
+    """
+
+    inotify: INotify
+
+    def start_watcher_on_dir(self) -> None:
+        """
+        Use watchdog in a separate thread to watch a dir for changes.
+        """
+
+        inotofy_task = asyncio.ensure_future(self.inotify_watcher())
+
+        inotofy_task.add_done_callback(self._trigger_shutdown)
+
+    def _trigger_shutdown(self, *args):
+        """
+        Poison pills the internal queue with None - which should trigger shutdown.
+
+        :param args:
+        :return:
+        """
+
+        self._logger.info("_trigger_shutdown  called with args - %s", str(args))
+
+        try:
+            asyncio.get_event_loop().call_soon_threadsafe(
+                self._internal_queue.put_nowait, None
+            )
+        except RuntimeError:  # Can happen when the shutdown is not clean
+            return
+
+    async def _process_queue(self) -> bool:
+        """
+        Take event off the internal queue, process them, and then put them on the wire.
+        """
+        target_async_path: aiopath.AsyncPath = aiopath.AsyncPath(self._input_path)
+
+        while True:
+            new_event = await self._internal_queue.get()
+
+            print(new_event)
+
+            # The events produced when the dir is deleted are not helpful
+            # Currently not sure that watchdog elegantly indicates that it's had its target dir
+            # deleted
+            # So need this horrible hack. Will get the rest of it working, then optimize
+
+            # No helpful info is provided by the watcher if the target dir itself is deleted
+            # So need to check before each event
+
+            target_exists: bool = await target_async_path.exists()
+
+            if not target_exists:
+                self._logger.info("Delete event detected - %s is gone", self._input_path)
+                return True
+
+            # await self._process_event_from_watched_dir(new_event)
+
+    async def process_changes(self, changes: set[tuple[Any, str]]) -> bool:
+        """
+        Process events pulled from inotify.
+
+        :param changes:
+        :return:
+        """
+        for change in changes:
+            inotify_event = change[0]
+
+            wd = inotify_event.wd
+            print(wd)
+            print(self.inotify.get_path(wd))
+            print(inotify_event)
+
+            event_flags = {_ for _ in flags.from_mask(inotify_event.mask)}
+
+            # We have created a file
+            if event_flags == {flags.CREATE}:
+                return await self._process_file_creation_event(inotify_event)
+
+            if event_flags == {flags.CREATE, flags.ISDIR}:
+                return await self._process_dir_creation_event(inotify_event)
+
+            if event_flags == {flags.MODIFY}:
+                return await self._process_file_modify_event(inotify_event)
+
+            if event_flags == {flags.DELETE}:
+                return await self._process_file_delete_event(inotify_event)
+
+            assert True is False, event_flags
+
+        return False
+
+    async def _process_file_creation_event(self, inotify_file_create_event: Event) -> bool:
+        """
+        Process a file creation event and put it on the wire.
+
+        :param inotify_file_create_event:
+        :return:
+        """
+        wd = inotify_file_create_event.wd
+        file_path = self.inotify.get_path(wd)
+
+        await self.send(
+            FileCreatedWithinWatchedDirFSInputEvent(
+                base_event=inotify_file_create_event, path=file_path
+            )
+        )
+
+        return True
+
+    async def _process_dir_creation_event(self, inotify_dir_create_event: Event) -> bool:
+        """
+        We have created a dir.
+
+        :param inotify_dir_create_event:
+        :return:
+        """
+        wd = inotify_dir_create_event.wd
+        dir_path = self.inotify.get_path(wd)
+
+        await self.send(
+            DirCreatedWithinWatchedDirFSInputEvent(
+                base_event=inotify_dir_create_event, path=dir_path
+            )
+        )
+
+        return True
+
+    async def _process_file_modify_event(self, inotify_file_modified_event: Event) -> bool:
+        """
+        A file has been modified within the watched dir.
+
+        :return:
+        """
+        wd = inotify_file_modified_event.wd
+        file_path = self.inotify.get_path(wd)
+
+        await self.send(
+            FileUpdatedWithinWatchedDirFSInputEvent(
+                base_event=inotify_file_modified_event, path=file_path
+            )
+        )
+
+        return True
+
+    async def _process_file_delete_event(self, inotify_file_delete_event: Event) -> bool:
+        """
+        A file has been deleted from within the watch.
+
+        :param inotify_file_delete_event:
+        :return:
+        """
+        wd = inotify_file_delete_event.wd
+        file_path = self.inotify.get_path(wd)
+
+        await self.send(
+            FileDeletedWithinWatchedDirFSInputEvent(
+                base_event=inotify_file_delete_event, path=file_path
+            )
+        )
+
+    async def inotify_watcher(self) -> None:
+        """
+        Pull events off the inotify observer and put them on the queue.
+
+        :return:
+        """
+
+        await asyncio.sleep(2)
+
+        self._logger.info("About to run inotify recursively on a directory")
+
+        inotify = INotify()
+        self.inotify = inotify
+
+        watch_flags = (
+            flags.MODIFY
+            | flags.ATTRIB
+            | flags.MOVED_FROM
+            | flags.MOVED_TO
+            | flags.CREATE
+            | flags.DELETE
+            | flags.DELETE_SELF
+            | flags.MOVE_SELF
+            | flags.ISDIR
+        )
+        wd = inotify.add_watch_recursive(self._input_path, watch_flags)
+
+        self._logger.info("Starting inotify poll - polling every 0.1 seconds")
+
+        while True:
+            events = tuple((event, event.name) for event in inotify.read(timeout=1))
+
+            await self.process_changes(events)
+
+            await asyncio.sleep(0.1)
+
+        self._logger.info("Ending inotify poll - %s", wd)
+
+
+
+class WatchdogLinuxFileSystemObserver(BaseLinuxFileSystemObserver):
+    """
+    Base class for all observers defined on the system.
+
+    Basic program flow goes as follows
+     - Observer is provided with a location in a local file system
+     - Observer checks to see if there's something at that location
+     - if there is
+       - and it's a dir - start a dir observer
+       - and it's a file - start a file observer
+     - if there isn't, wait for there to be and start the appropriate observer
+    """
+
+    _watchdog_observer: WatchdogBaseObserver = watchdog.observers.Observer()
 
     async def _process_event_from_watched_dir(self, event: WatchdogFileSystemEvent) -> None:
         """
@@ -190,7 +412,7 @@ class LinuxFileSystemObserver:
         else:
             self._logger.info("Unhandled event in _process_event - %s", event)
 
-    def start_watchdog_on_dir(self) -> None:
+    def start_watcher_on_dir(self) -> None:
         """
         Use watchdog in a separate thread to watch a dir for changes.
         """
@@ -203,6 +425,7 @@ class LinuxFileSystemObserver:
             event_handler=handler, path=self._input_path, recursive=True
         )
         self._watchdog_observer.start()  # type: ignore
+        self._watchdog_observer.is_alive()  # type: ignore
 
         self._logger.info("Started _watchdog_observer")
 
@@ -441,3 +664,6 @@ class LinuxFileSystemObserver:
             return await self._process_dir_delete_event(event)
 
         raise NotImplementedError(f"{event} had unexpected form.")
+
+
+LinuxFileSystemObserver = INotifyFileSystemObserver
