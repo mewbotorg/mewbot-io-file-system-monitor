@@ -46,32 +46,15 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
 
             self._logger.info("inotify is None - starting inotify")
 
-            # Fire the notifier
-            await self.start_watcher_on_file()
+        # Fire the watcher
+        watcher_status = await self.watch_file()
 
-            while True:
+        if watcher_status is None:
+            self._logger.info("Shutdown seen by monitor_file_watcher - shutting down")
+        else:
+            self._logger.info("Unexpeted status seen by monitor_file_watcher from watch_file - %s", watcher_status)
 
-                print("Waiting for file deletion")
-
-                # Start polling the queue
-                file_deleted = await self._pull_off_queue()
-
-                print(f"{file_deleted = }")
-
-                if file_deleted:
-                    self._logger.info("Monitored file detected as deleted - shutdown")
-                    # File is detected as deleted
-                    # - shutdown the watcher (and/or inotify)
-                    # - indicate we need to start monitoring for a new file
-                    # (or folder - in which case this will do nothing more)
-                    # - (Putting an event to indicate this on the wire should have happened elsewhere)
-                    self.inotify = None
-                    self.watcher = None
-                    self._input_path_state.input_path_exists = False
-
-                    return
-
-                await asyncio.sleep(0.1)
+        return None
 
     async def _pull_off_queue(self) -> bool:
         """
@@ -82,6 +65,7 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
         self._logger.info("About to start watching queue")
 
         while True:
+
             # Give the loop a chance to do something else
             await asyncio.sleep(0.1)
             try:
@@ -166,16 +150,6 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
 
         return True
 
-    async def start_watcher_on_file(self) -> None:
-        """
-        inotify is not async compatible - running it in an executor.
-
-        :return:
-        """
-        inotify_task = asyncio.ensure_future(self.inotify_watcher())
-
-        inotify_task.add_done_callback(self._trigger_shutdown)
-
     def _trigger_shutdown(self, *args):
         """
         Poison pills the internal queue with None - which should trigger shutdown.
@@ -193,7 +167,7 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
         except RuntimeError:  # Can happen when the shutdown is not clean
             return
 
-    async def inotify_watcher(self) -> None:
+    async def watch_file(self) -> None:
         """
         Pull events off the inotify observer and put them on the queue.
 
@@ -221,13 +195,23 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
 
         wd = inotify.add_watch(self._input_path_state.input_path, watch_flags)
 
-        self._logger.info("Starting inotify poll - polling every 0.1 seconds")
+        # self._logger.info("Starting inotify poll - polling every 0.1 seconds - with inotify %s", inotify)
 
         while True:
-            events = tuple((event, event.name) for event in inotify.read(timeout=1))
 
-            await self.process_changes(events)
+            # self._logger.info("In loop - pulling events")
 
+            events = tuple((event, event.name) for event in inotify.read(timeout=0.1))
+
+            # self._logger.info("Got events - %", str(events))
+
+            shutdown = await self.process_changes(events)
+
+            if shutdown:
+                self._logger.info("Shutdown called - ending loop")
+                break
+
+            # Give the rest of the loop a chance to do something
             await asyncio.sleep(0.1)
 
         self._logger.info("Ending inotify poll - %s", wd)

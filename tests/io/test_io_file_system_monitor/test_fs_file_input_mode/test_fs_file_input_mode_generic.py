@@ -12,6 +12,7 @@ Tests for the file input mode for the file_system_monitor IOConfig.
 
 import asyncio
 import os
+import logging
 import tempfile
 import uuid
 
@@ -130,7 +131,7 @@ class TestFileTypeFSInput(FileSystemTestUtilsDirEvents, FileSystemTestUtilsFileE
             # Tests are making a clean exist after this test
 
     @pytest.mark.asyncio
-    async def test_FileTypeFSInput_existing_file_io_in_existing_file(self) -> None:
+    async def test_FileTypeFSInput_existing_file_io_in_existing_file(self, caplog) -> None:
         """
         Starting the monitor on a file which already exists.
 
@@ -139,10 +140,16 @@ class TestFileTypeFSInput(FileSystemTestUtilsDirEvents, FileSystemTestUtilsFileE
         3 - Append to that file - check this produces the expected event
         4 - Do it a few times - check the results continue to be produced
         """
+        caplog.set_level(logging.INFO)
+
         with tempfile.TemporaryDirectory() as tmp_dir_path:
             tmp_file_path = os.path.join(tmp_dir_path, "mewbot_test_file.test")
+            # tmp_file_path = "/home/ajcameron/test_file.txt"
+
             with open(tmp_file_path, "w", encoding="utf-8") as test_outfile:
                 test_outfile.write("We are testing mewbot!")
+
+            assert os.path.exists(tmp_file_path)
 
             test_fs_input = FileTypeFSInput(input_path=tmp_file_path)
             assert isinstance(test_fs_input, FileTypeFSInput)
@@ -155,14 +162,16 @@ class TestFileTypeFSInput(FileSystemTestUtilsDirEvents, FileSystemTestUtilsFileE
             run_task = asyncio.get_running_loop().create_task(test_fs_input.run())
 
             # Give the class a chance to actually do init
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(5)
 
             # Generate some events which should end up in the queue
             # - Using blocking methods - this should still work
             with open(tmp_file_path, "w", encoding="utf-8") as test_outfile:
                 test_outfile.write(str(uuid.uuid4()))
 
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(5)
+
+            # assert True is False, caplog.text
 
             await self.process_file_event_queue_response(
                 output_queue=output_queue, event_type=FileUpdatedAtWatchLocationFSInputEvent
