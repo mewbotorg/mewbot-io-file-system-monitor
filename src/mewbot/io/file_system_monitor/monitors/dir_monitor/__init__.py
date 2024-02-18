@@ -17,4 +17,6 @@ from mewbot.io.file_system_monitor.monitors.dir_monitor.windows_dir_observer imp
     WindowsFileSystemObserver,
 )
 
+# LinuxFileSystemObserver = WindowsFileSystemObserver
+
 __all__ = ["LinuxFileSystemObserver", "WindowsFileSystemObserver"]

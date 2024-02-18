@@ -124,6 +124,8 @@ class BaseLinuxFileSystemObserver:
         """
 
         if self._input_path is not None:
+            # Run the watcher in a separate thread - as it may block
+            # asyncio.get_event_loop().create_task(asyncio.to_thread(self.start_watcher_on_dir))
             self.start_watcher_on_dir()
         else:
             self._logger.warning("self._input_path is None in run - this should not happen")
@@ -422,14 +424,7 @@ class WatchdogLinuxFileSystemObserver(BaseLinuxFileSystemObserver):
             queue=self._internal_queue, loop=asyncio.get_event_loop()
         )
 
-        if self._polling:
-            self._logger.info("Starting watchdog PollingObserver")
-            from watchdog.observers.polling import PollingObserver as Observer
-            self._watchdog_observer = Observer(polling_interval=0.5)
-        else:
-            self._logger.info("Starting watchdog Observer")
-            self._watchdog_observer = watchdog.observers.Observer()
-
+        self._watchdog_observer = watchdog.observers.Observer()
         self._watchdog_observer.schedule(  # type: ignore
             event_handler=handler, path=self._input_path, recursive=True
         )
