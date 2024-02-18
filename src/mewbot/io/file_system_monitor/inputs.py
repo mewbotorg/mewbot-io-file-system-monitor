@@ -113,7 +113,7 @@ class FileTypeFSInput(Input, BaseFileMonitorMixin):
 
         # The only case where the watcher can actually start
         elif self._input_path_state.input_path is not None:  # needed to fool pylint
-            self.watcher = watchfiles.awatch(self._input_path_state.input_path)
+            self.watcher = watchfiles.awatch(self._input_path_state.input_path, force_polling=True)
 
         else:
             raise NotImplementedError

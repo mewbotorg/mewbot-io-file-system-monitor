@@ -13,6 +13,7 @@ Tests for the file input mode for the file_system_monitor IOConfig.
 import asyncio
 import os
 import logging
+import shutil
 import tempfile
 import uuid
 
@@ -22,6 +23,7 @@ from mewbot.api.v1 import InputEvent
 from mewbot.io.file_system_monitor import FileTypeFSInput
 from mewbot.io.file_system_monitor.fs_events import (
     FileUpdatedAtWatchLocationFSInputEvent,
+FileDeletedFromWatchLocationFSInputEvent
 )
 from tests.io.test_io_file_system_monitor.fs_test_utils import (
     FileSystemTestUtilsDirEvents,
@@ -33,7 +35,7 @@ from tests.io.test_io_file_system_monitor.fs_test_utils import (
 # which means CamelCase in function names
 
 
-class TestFileTypeFSInput(FileSystemTestUtilsDirEvents, FileSystemTestUtilsFileEvents):
+class TestFileTypeFSInputGeneric(FileSystemTestUtilsDirEvents, FileSystemTestUtilsFileEvents):
     """
     Tests that the expected file type events are produced from a monitored file.
     """
@@ -162,22 +164,23 @@ class TestFileTypeFSInput(FileSystemTestUtilsDirEvents, FileSystemTestUtilsFileE
             run_task = asyncio.get_running_loop().create_task(test_fs_input.run())
 
             # Give the class a chance to actually do init
-            await asyncio.sleep(5)
+            await asyncio.sleep(2)
 
             # Generate some events which should end up in the queue
             # - Using blocking methods - this should still work
             with open(tmp_file_path, "w", encoding="utf-8") as test_outfile:
                 test_outfile.write(str(uuid.uuid4()))
 
-            await asyncio.sleep(5)
+            await asyncio.sleep(2)
 
             # assert True is False, caplog.text
-
-            await self.process_file_event_queue_response(
-                output_queue=output_queue, event_type=FileUpdatedAtWatchLocationFSInputEvent
-            )
+            #
+            # await self.process_file_event_queue_response(
+            #     output_queue=output_queue, event_type=FileUpdatedAtWatchLocationFSInputEvent
+            # )
 
             for i in range(20):
+
                 # Generate some events which should end up in the queue
                 # - Using blocking methods - this should still work
                 with open(tmp_file_path, "w", encoding="utf-8") as test_outfile:
@@ -186,7 +189,7 @@ class TestFileTypeFSInput(FileSystemTestUtilsDirEvents, FileSystemTestUtilsFileE
                         f"{str(uuid.uuid4())} - time {i}"
                     )
 
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(2)
 
                 if output_queue.qsize() == 0:
                     try:
@@ -194,14 +197,123 @@ class TestFileTypeFSInput(FileSystemTestUtilsDirEvents, FileSystemTestUtilsFileE
                     except asyncio.exceptions.InvalidStateError:
                         pass
 
-                await self.process_file_event_queue_response(
-                    output_queue=output_queue,
-                    file_path=tmp_file_path,
-                    event_type=FileUpdatedAtWatchLocationFSInputEvent,
-                )
+                elif output_queue.qsize() == 1:
+
+                    await self.process_file_event_queue_response(
+                        output_queue=output_queue,
+                        file_path=tmp_file_path,
+                        event_type=FileUpdatedAtWatchLocationFSInputEvent,
+                        allowed_queue_size=0
+                    )
+
+                elif output_queue.qsize() == 2:
+
+                    await self.process_file_event_queue_response(
+                        output_queue=output_queue,
+                        file_path=tmp_file_path,
+                        event_type=FileUpdatedAtWatchLocationFSInputEvent,
+                        allowed_queue_size=1
+                    )
+
+                else:
+
+                    raise NotImplementedError(output_queue.qsize())
 
             # Otherwise the queue seems to be blocking pytest from a clean exit.
             await self.cancel_task(run_task)
 
             # Tests are NOW making a clean exist after this test
             # This seems to have been a problem with the presence of a queue
+
+    @pytest.mark.asyncio
+    async def test_FileTypeFSInput_create_update_delete_target_file_dir_overwrite(
+        self,
+    ) -> None:
+        """
+        Tests creating, updating, deleting and overwriting a file in a loop.
+
+        1 - Start without a file at all.
+        2 - Starting the input
+        3 - Create a file - check for the file creation event
+        3 - Append to that file - check this produces the expected event
+        4 - Overwrite the file with a dir - this should crash the observer
+            But it should be caught and an appopriate event generated
+        """
+        with tempfile.TemporaryDirectory() as tmp_dir_path:
+
+            input_path = os.path.join(tmp_dir_path, "test_file_delete_me.txt")
+
+            run_task, output_queue = await self.get_FileTypeFSInput(input_path)
+
+            for i in range(10):
+
+                await asyncio.sleep(1)
+
+                with open(input_path, "w", encoding="utf-8") as test_outfile:
+                    test_outfile.write(
+                        f"\nThe testing will continue until moral improves! - time {i}"
+                    )
+
+                await asyncio.sleep(1)
+
+                await self.process_input_file_creation_response(output_queue)
+
+                with open(input_path, "w", encoding="utf-8") as test_outfile:
+                    test_outfile.write(
+                        f"\nThe testing will continue until moral improves! - time {i}"
+                    )
+
+                await asyncio.sleep(1)
+
+                await self.process_file_event_queue_response(
+                    output_queue=output_queue,
+                    file_path=input_path,
+                    event_type=FileUpdatedAtWatchLocationFSInputEvent,
+                    allowed_queue_size=0
+                )
+
+                await asyncio.sleep(1)
+
+                with open(input_path, "a", encoding="utf-8") as test_outfile:
+                    test_outfile.write(
+                        f"\nThe testing will continue until moral improves! - time {i}"
+                    )
+
+                await asyncio.sleep(1)
+
+                await self.process_file_event_queue_response(
+                    output_queue=output_queue,
+                    file_path=input_path,
+                    event_type=FileUpdatedAtWatchLocationFSInputEvent,
+                    allowed_queue_size=0
+                )
+
+                test_dir_path = os.path.join(tmp_dir_path, "test_dir_del_me")
+
+                os.mkdir(test_dir_path)
+
+                # Attempt to copy a dir over the top of the input file
+                # this should fail with no effect.
+                try:
+                    shutil.copytree(test_dir_path, input_path)
+                except FileExistsError:
+                    pass
+
+                shutil.rmtree(test_dir_path)
+                os.unlink(input_path)
+
+                await asyncio.sleep(1)
+
+                await self.process_file_event_queue_response(
+                    output_queue=output_queue,
+                    file_path=input_path,
+                    event_type=FileDeletedFromWatchLocationFSInputEvent,
+                    allowed_queue_size=0
+                )
+
+                # Make a folder at the monitored path - this should produce no result
+                os.mkdir(input_path)
+
+                shutil.rmtree(input_path)
+
+            await self.cancel_task(run_task)

@@ -30,6 +30,9 @@ from mewbot.io.file_system_monitor.fs_events import (
 from mewbot.io.file_system_monitor.monitors.dir_monitor.linux_dir_observer import (
     WatchdogLinuxFileSystemObserver,
 )
+from mewbot.io.file_system_monitor.monitors.dir_monitor.event_handler import (
+    MewbotEventHandler,
+)
 from mewbot.io.file_system_monitor.monitors.external_apis import WatchdogFileSystemEvent
 
 
@@ -65,6 +68,32 @@ class WindowsFileSystemObserver(WatchdogLinuxFileSystemObserver):
 
         self._dir_cache = set()
         self.build_dir_cache()
+
+    def start_watcher_on_dir(self) -> None:
+        """
+        Use watchdog in a separate thread to watch a dir for changes.
+        """
+        handler = MewbotEventHandler(
+            queue=self._internal_queue, loop=asyncio.get_event_loop()
+        )
+
+        self._watchdog_observer = watchdog.observers.Observer()
+        self._watchdog_observer.schedule(  # type: ignore
+            event_handler=handler, path=self._input_path, recursive=True
+        )
+        self._watchdog_observer.start()  # type: ignore
+        self._watchdog_observer.is_alive()  # type: ignore
+
+        self._logger.info("Started _watchdog_observer")
+
+        self._watchdog_observer.join(10)
+
+        try:
+            asyncio.get_event_loop().call_soon_threadsafe(
+                self._internal_queue.put_nowait, None
+            )
+        except RuntimeError:  # Can happen when the shutdown is not clean
+            return
 
     def build_dir_cache(self) -> None:
         """

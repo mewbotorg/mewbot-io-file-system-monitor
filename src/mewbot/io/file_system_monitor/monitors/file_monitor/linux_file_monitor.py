@@ -102,7 +102,7 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
 
             event_flags = {_ for _ in flags.from_mask(inotify_event.mask)}
 
-            if event_flags == {flags.MODIFY}:
+            if event_flags == {flags.MODIFY} or event_flags == {flags.ATTRIB}:
                 await self._process_file_modification_event(inotify_event)
                 continue
 
@@ -195,7 +195,7 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
 
         wd = inotify.add_watch(self._input_path_state.input_path, watch_flags)
 
-        # self._logger.info("Starting inotify poll - polling every 0.1 seconds - with inotify %s", inotify)
+        self._logger.info("Starting inotify poll - polling every 0.1 seconds - with inotify %s", inotify)
 
         while True:
 
@@ -203,7 +203,8 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
 
             events = tuple((event, event.name) for event in inotify.read(timeout=0.1))
 
-            # self._logger.info("Got events - %", str(events))
+            if events:
+                self._logger.info("Got events - %s", str(events))
 
             shutdown = await self.process_changes(events)
 

@@ -6,7 +6,7 @@ kind: IOConfig
 implementation: mewbot.io.file_system_monitor.FileSystemMonitorIO
 uuid: aaaaaaaa-aaaa-4aaa-0000-aaaaaaaaaa01
 properties:
-  input_path: "/home/ajcameron"
+  input_path: "/home/ajcameron/test_dir"
   input_path_type: "dir"
 
 ---

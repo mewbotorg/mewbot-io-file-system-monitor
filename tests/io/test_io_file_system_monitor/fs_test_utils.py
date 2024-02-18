@@ -195,6 +195,7 @@ class FileSystemTestUtilsFileEvents(GeneralUtils):
         event_type: Any,
         file_path: Optional[str] = None,
         allowed_queue_size: int = 0,
+        message: Optional[str] = None
     ) -> None:
         """
         Get the next event off the queue.
@@ -203,9 +204,13 @@ class FileSystemTestUtilsFileEvents(GeneralUtils):
         """
 
         # This should have generated an event
-        queue_out = await self.timeout_get(output_queue)
+        try:
+            queue_out = await self.timeout_get(output_queue)
+        except Exception as exp:
+            raise AssertionError(message) from exp
+
         self.validate_file_input_event(
-            input_event=queue_out, event_type=event_type, file_path=file_path
+            input_event=queue_out, event_type=event_type, file_path=file_path, message=message
         )
 
         await self.verify_queue_size(output_queue, allowed_queue_size=allowed_queue_size)

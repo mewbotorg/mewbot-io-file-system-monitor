@@ -19,9 +19,15 @@ from mewbot.io.file_system_monitor.monitors.file_monitor.windows_file_monitor im
     WindowsFileMonitorMixin,
 )
 
-if sys.platform == "win32":
-    BaseFileMonitorMixin = WindowsFileMonitorMixin
-else:
-    BaseFileMonitorMixin = LinuxFileMonitorMixin
+
+
+BaseFileMonitorMixin = WindowsFileMonitorMixin
+
+
+
+# if sys.platform == "win32":
+#     BaseFileMonitorMixin = WindowsFileMonitorMixin
+# else:
+#     BaseFileMonitorMixin = LinuxFileMonitorMixin
 
 __all__ = ["BaseFileMonitorMixin"]

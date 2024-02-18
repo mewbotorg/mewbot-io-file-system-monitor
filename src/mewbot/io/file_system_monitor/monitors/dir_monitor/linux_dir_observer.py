@@ -377,6 +377,8 @@ class WatchdogLinuxFileSystemObserver(BaseLinuxFileSystemObserver):
      - if there isn't, wait for there to be and start the appropriate observer
     """
 
+    _polling: bool = True
+
     _watchdog_observer: WatchdogBaseObserver = watchdog.observers.Observer()
 
     async def _process_event_from_watched_dir(self, event: WatchdogFileSystemEvent) -> None:
@@ -420,7 +422,14 @@ class WatchdogLinuxFileSystemObserver(BaseLinuxFileSystemObserver):
             queue=self._internal_queue, loop=asyncio.get_event_loop()
         )
 
-        self._watchdog_observer = watchdog.observers.Observer()
+        if self._polling:
+            self._logger.info("Starting watchdog PollingObserver")
+            from watchdog.observers.polling import PollingObserver as Observer
+            self._watchdog_observer = Observer(polling_interval=0.5)
+        else:
+            self._logger.info("Starting watchdog Observer")
+            self._watchdog_observer = watchdog.observers.Observer()
+
         self._watchdog_observer.schedule(  # type: ignore
             event_handler=handler, path=self._input_path, recursive=True
         )
@@ -666,4 +675,4 @@ class WatchdogLinuxFileSystemObserver(BaseLinuxFileSystemObserver):
         raise NotImplementedError(f"{event} had unexpected form.")
 
 
-LinuxFileSystemObserver = INotifyFileSystemObserver
+LinuxFileSystemObserver = WatchdogLinuxFileSystemObserver

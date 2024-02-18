@@ -51,6 +51,7 @@ class WindowsFileMonitorMixin(BaseFileMonitor):
             file_deleted = await self.process_changes(changes)
 
             if file_deleted:
+                self._logger.info("input file detected as deleted - shutdown watcher")
                 # File is detected as deleted
                 # - shutdown the watcher
                 # - indicate we need to start monitoring for a new file
