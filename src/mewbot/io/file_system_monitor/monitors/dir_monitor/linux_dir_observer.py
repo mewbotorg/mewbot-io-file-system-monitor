@@ -22,6 +22,7 @@ from mewbot.core import InputEvent
 
 from mewbot.io.file_system_monitor.fs_events import (
     DirCreatedWithinWatchedDirFSInputEvent,
+DirCreatedAtWatchLocationFSInputEvent,
     DirDeletedFromWatchedDirFSInputEvent,
     DirDeletedFromWatchLocationFSInputEvent,
     DirMovedOutOfWatchedDirFSInputEvent,
@@ -514,8 +515,13 @@ class WatchdogLinuxFileSystemObserver(BaseLinuxFileSystemObserver):
             raise NotImplementedError("self._input_path unexpectedly None.")
 
         monitored_dir_path = pathlib.Path(self._input_path)
-        dir_dst_path = pathlib.Path(event.dest_path)
-        if dir_dst_path.absolute().is_relative_to(monitored_dir_path):
+        file_dst_path = pathlib.Path(event.dest_path)
+        # Not sure why we're getting these events - seems to be a bug with the underlying lib
+        if file_dst_path.is_dir():
+            await self._process_dir_move_event(event)
+            return
+
+        if file_dst_path.absolute().is_relative_to(monitored_dir_path):
             await self.send(
                 FileMovedWithinWatchedDirFSInputEvent(
                     path=event.dest_path,
@@ -561,6 +567,17 @@ class WatchdogLinuxFileSystemObserver(BaseLinuxFileSystemObserver):
         :param event:
         :return:
         """
+
+        if pathlib.Path(event.src_path).resolve() == pathlib.Path(self._input_path):
+            self._logger.info("Unexpected case in _process_dir_in_watched_dir_creation_event")
+            await self.send(
+                DirCreatedAtWatchLocationFSInputEvent(
+                    path=event.src_path,
+                    base_event=event,
+                )
+            )
+            return
+
         await self.send(
             DirCreatedWithinWatchedDirFSInputEvent(
                 path=event.src_path,
@@ -582,7 +599,7 @@ class WatchdogLinuxFileSystemObserver(BaseLinuxFileSystemObserver):
         :return:
         """
         assert self._input_path is not None, "mypy hack"
-        if pathlib.Path(event.src_path).samefile(pathlib.Path(self._input_path).resolve()):
+        if pathlib.Path(event.src_path).samefile(pathlib.Path(self._input_path)):
             await self.send(
                 DirUpdatedAtWatchLocationFSInputEvent(
                     path=event.src_path,

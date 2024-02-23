@@ -40,6 +40,8 @@ class TestFileTypeFSInputGeneric(FileSystemTestUtilsDirEvents, FileSystemTestUti
     Tests that the expected file type events are produced from a monitored file.
     """
 
+    sleep_delay: float = 0.5
+
     # - INIT AND ATTRIBUTES
 
     @pytest.mark.asyncio
@@ -104,7 +106,7 @@ class TestFileTypeFSInputGeneric(FileSystemTestUtilsDirEvents, FileSystemTestUti
             # We need to retain control of the thread to preform shutdown
             asyncio.get_running_loop().create_task(test_fs_input.run())
 
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(self.sleep_delay)
             # Note - manually stopping the loop seems to lead to a rather nasty cash
 
     @pytest.mark.asyncio
@@ -164,14 +166,14 @@ class TestFileTypeFSInputGeneric(FileSystemTestUtilsDirEvents, FileSystemTestUti
             run_task = asyncio.get_running_loop().create_task(test_fs_input.run())
 
             # Give the class a chance to actually do init
-            await asyncio.sleep(2)
+            await asyncio.sleep(self.sleep_delay)
 
             # Generate some events which should end up in the queue
             # - Using blocking methods - this should still work
             with open(tmp_file_path, "w", encoding="utf-8") as test_outfile:
                 test_outfile.write(str(uuid.uuid4()))
 
-            await asyncio.sleep(2)
+            await asyncio.sleep(self.sleep_delay)
 
             # assert True is False, caplog.text
             #
@@ -189,7 +191,7 @@ class TestFileTypeFSInputGeneric(FileSystemTestUtilsDirEvents, FileSystemTestUti
                         f"{str(uuid.uuid4())} - time {i}"
                     )
 
-                await asyncio.sleep(2)
+                await asyncio.sleep(self.sleep_delay)
 
                 if output_queue.qsize() == 0:
                     try:
@@ -247,14 +249,14 @@ class TestFileTypeFSInputGeneric(FileSystemTestUtilsDirEvents, FileSystemTestUti
 
             for i in range(10):
 
-                await asyncio.sleep(1)
+                await asyncio.sleep(self.sleep_delay * 2)
 
                 with open(input_path, "w", encoding="utf-8") as test_outfile:
                     test_outfile.write(
                         f"\nThe testing will continue until moral improves! - time {i}"
                     )
 
-                await asyncio.sleep(1)
+                await asyncio.sleep(self.sleep_delay * 2)
 
                 await self.process_input_file_creation_response(output_queue)
 
@@ -263,7 +265,7 @@ class TestFileTypeFSInputGeneric(FileSystemTestUtilsDirEvents, FileSystemTestUti
                         f"\nThe testing will continue until moral improves! - time {i}"
                     )
 
-                await asyncio.sleep(1)
+                await asyncio.sleep(self.sleep_delay * 2)
 
                 await self.process_file_event_queue_response(
                     output_queue=output_queue,
@@ -272,14 +274,14 @@ class TestFileTypeFSInputGeneric(FileSystemTestUtilsDirEvents, FileSystemTestUti
                     allowed_queue_size=0
                 )
 
-                await asyncio.sleep(1)
+                await asyncio.sleep(self.sleep_delay * 2)
 
                 with open(input_path, "a", encoding="utf-8") as test_outfile:
                     test_outfile.write(
                         f"\nThe testing will continue until moral improves! - time {i}"
                     )
 
-                await asyncio.sleep(1)
+                await asyncio.sleep(self.sleep_delay * 2)
 
                 await self.process_file_event_queue_response(
                     output_queue=output_queue,
@@ -302,7 +304,7 @@ class TestFileTypeFSInputGeneric(FileSystemTestUtilsDirEvents, FileSystemTestUti
                 shutil.rmtree(test_dir_path)
                 os.unlink(input_path)
 
-                await asyncio.sleep(1)
+                await asyncio.sleep(self.sleep_delay * 2)
 
                 await self.process_file_event_queue_response(
                     output_queue=output_queue,
@@ -313,6 +315,9 @@ class TestFileTypeFSInputGeneric(FileSystemTestUtilsDirEvents, FileSystemTestUti
 
                 # Make a folder at the monitored path - this should produce no result
                 os.mkdir(input_path)
+
+                # Empty the output queue
+                self.dump_queue_to_list(output_queue)
 
                 shutil.rmtree(input_path)
 

@@ -19,11 +19,14 @@ from mewbot.io.file_system_monitor.fs_events import (
     DirDeletedFromWatchedDirFSInputEvent,
     DirMovedWithinWatchedDirFSInputEvent,
     DirUpdatedWithinWatchedDirFSInputEvent,
+DirUpdatedAtWatchLocationFSInputEvent,
     FileAtWatchLocInputEvent,
     FileCreatedAtWatchLocationFSInputEvent,
+FileCreatedWithinWatchedDirFSInputEvent,
     FileDeletedFromWatchLocationFSInputEvent,
     FileMovedWithinWatchedDirFSInputEvent,
     FileUpdatedAtWatchLocationFSInputEvent,
+FileUpdatedWithinWatchedDirFSInputEvent
 )
 
 # pylint: disable=invalid-name
@@ -155,7 +158,7 @@ class GeneralUtils:
     async def verify_queue_size(
         output_queue: asyncio.Queue[InputEvent],
         task_done: bool = True,
-        allowed_queue_size: int = 0,
+        allowed_queue_size: Union[int, list[int]] = 0,
     ) -> None:
         """
         Check the given queue declares that it has the correct size.
@@ -165,13 +168,18 @@ class GeneralUtils:
         :param allowed_queue_size: Is the queue allowed not to be empty?
         :return:
         """
+        if isinstance(allowed_queue_size, int):
+            allowed_queue_size = [allowed_queue_size, ]
+        if 0 not in allowed_queue_size:
+            allowed_queue_size.append(0)
+
         # There should be no other events in the queue
         output_queue_qsize = output_queue.qsize()
         if allowed_queue_size:
             # Note - this is somewhat alarming!
-            assert output_queue_qsize in (0, allowed_queue_size), (
+            assert output_queue_qsize in allowed_queue_size, (
                 f"Output queue actually has {output_queue_qsize} entries "
-                f"- the allowed_queue_size is either {allowed_queue_size} or zero"
+                f"- the allowed_queue_size should be one of {allowed_queue_size}"
             )
         else:
             assert output_queue_qsize == 0, (
@@ -194,7 +202,7 @@ class FileSystemTestUtilsFileEvents(GeneralUtils):
         output_queue: asyncio.Queue[InputEvent],
         event_type: Any,
         file_path: Optional[str] = None,
-        allowed_queue_size: int = 0,
+        allowed_queue_size: Union[int, list[int]] = 0,
         message: Optional[str] = None
     ) -> None:
         """
@@ -285,9 +293,41 @@ class FileSystemTestUtilsFileEvents(GeneralUtils):
             )
             input_event_path = getattr(input_event, "path")
 
-            assert input_event_path == file_path
+            assert input_event_path == file_path, f"Expected {input_event_path}, got {file_path}"
 
-    def check_queue_for_file_creation_input_event(
+    def check_queue_for_file_creation_input_event_within_watch_loc(
+        self,
+        output_queue: Union[asyncio.Queue[InputEvent], List[InputEvent]],
+        file_path: Optional[str] = None,
+        message: str = "",
+    ) -> None:
+        """
+        Check the given queue to see that there is a CreatedFileFSInputEvent in it.
+
+        :param output_queue:
+        :param file_path:
+        :param message:
+        :return:
+        """
+        if isinstance(output_queue, asyncio.Queue):
+            input_events = self.dump_queue_to_list(output_queue)
+        elif isinstance(output_queue, list):
+            input_events = output_queue
+        else:
+            raise NotImplementedError(f"{output_queue} of unsupported type")
+
+        for event in input_events:
+            if isinstance(event, FileCreatedWithinWatchedDirFSInputEvent):
+                self.validate_file_creation_within_watch_loc_input_event(
+                    input_event=event, file_path=file_path, message=message
+                )
+                return
+
+        raise AssertionError(
+            f"CreatedFileFSInputEvent not found in input_events - {input_events}"
+        )
+
+    def check_queue_for_file_creation_input_event_at_watch_loc(
         self,
         output_queue: Union[asyncio.Queue[InputEvent], List[InputEvent]],
         file_path: Optional[str] = None,
@@ -310,7 +350,7 @@ class FileSystemTestUtilsFileEvents(GeneralUtils):
 
         for event in input_events:
             if isinstance(event, FileCreatedAtWatchLocationFSInputEvent):
-                self.validate_file_creation_input_event(
+                self.validate_file_creation_at_watch_loc_input_event(
                     input_event=event, file_path=file_path, message=message
                 )
                 return
@@ -320,7 +360,7 @@ class FileSystemTestUtilsFileEvents(GeneralUtils):
         )
 
     @staticmethod
-    def validate_file_creation_input_event(
+    def validate_file_creation_at_watch_loc_input_event(
         input_event: InputEvent,
         file_path: Optional[str] = None,
         message: str = "",
@@ -342,7 +382,30 @@ class FileSystemTestUtilsFileEvents(GeneralUtils):
         if file_path is not None:
             assert input_event.path == file_path
 
-    def check_queue_for_file_update_input_event(
+    @staticmethod
+    def validate_file_creation_within_watch_loc_input_event(
+        input_event: InputEvent,
+        file_path: Optional[str] = None,
+        message: str = "",
+    ) -> None:
+        """
+        Check the file creation event is correct.
+
+        :param input_event:
+        :param file_path:
+        :param message:
+        :return:
+        """
+        assert isinstance(
+            input_event, FileCreatedWithinWatchedDirFSInputEvent
+        ), f"Expected CreatedFileFSInputEvent - got {input_event}" + (
+            f" - {message}" if message else ""
+        )
+
+        if file_path is not None:
+            assert input_event.path == file_path
+
+    def check_queue_for_file_update_input_event_at_watch_loc(
         self,
         output_queue: Union[asyncio.Queue[InputEvent], List[InputEvent]],
         file_path: Optional[str] = None,
@@ -363,7 +426,37 @@ class FileSystemTestUtilsFileEvents(GeneralUtils):
 
         for event in input_events:
             if isinstance(event, FileUpdatedAtWatchLocationFSInputEvent):
-                self.validate_file_update_input_event(
+                self.validate_file_update_input_event_at_watch_loc(
+                    input_event=event, file_path=file_path, message=message
+                )
+                return
+
+        raise AssertionError(
+            f"UpdatedFileFSInputEvent not found in input_events - {input_events}"
+        )
+
+    def check_queue_for_file_update_input_event_within_watch_loc(
+        self,
+        output_queue: Union[asyncio.Queue[InputEvent], List[InputEvent]],
+        file_path: Optional[str] = None,
+        message: str = "",
+    ) -> None:
+        """
+        Check the given queue to see that there is a FileCreatedAtWatchLocationFSInputEvent in it.
+
+        Sometimes this is the best we can do - check to see if there is a creation event
+        _somewhere_.
+        """
+        if isinstance(output_queue, asyncio.Queue):
+            input_events = self.dump_queue_to_list(output_queue)
+        elif isinstance(output_queue, list):
+            input_events = output_queue
+        else:
+            raise NotImplementedError(f"{output_queue} of unsupported type")
+
+        for event in input_events:
+            if isinstance(event, FileUpdatedWithinWatchedDirFSInputEvent):
+                self.validate_file_update_input_event_within_watch_loc(
                     input_event=event, file_path=file_path, message=message
                 )
                 return
@@ -373,7 +466,30 @@ class FileSystemTestUtilsFileEvents(GeneralUtils):
         )
 
     @staticmethod
-    def validate_file_update_input_event(
+    def validate_file_update_input_event_within_watch_loc(
+        input_event: InputEvent,
+        file_path: Optional[str] = None,
+        message: str = "",
+    ) -> None:
+        """
+        Check that a file update event has been produced with the expected path.
+
+        :param input_event: Input event to check
+        :param file_path: Path at which the update should be registered.
+        :param message: Message to be included with the error - if there is one.
+        :return:
+        """
+        assert isinstance(
+            input_event, FileUpdatedWithinWatchedDirFSInputEvent
+        ), f"Expected UpdatedFileFSInputEvent - got {input_event}" + (
+            f" - {message}" if message else ""
+        )
+
+        if file_path is not None:
+            assert file_path == input_event.path
+
+    @staticmethod
+    def validate_file_update_input_event_at_watch_loc(
         input_event: InputEvent,
         file_path: Optional[str] = None,
         message: str = "",
@@ -543,7 +659,7 @@ class FileSystemTestUtilsDirEvents(GeneralUtils):
         output_queue: asyncio.Queue[InputEvent],
         event_type: Type[InputEvent],
         dir_path: Optional[str] = None,
-        allowed_queue_size: int = 1,
+        allowed_queue_size: Union[int, list[int]] = 1,
     ) -> None:
         """
         Grab the next queue event - check it's a Dir type event.
@@ -643,7 +759,7 @@ class FileSystemTestUtilsDirEvents(GeneralUtils):
         if dir_path is not None:
             assert input_event.path == dir_path
 
-    def check_queue_for_dir_update_input_event(
+    def check_queue_for_dir_update_input_event_within_watched_dir(
         self,
         output_queue: Union[asyncio.Queue[InputEvent], List[InputEvent]],
         dir_path: Optional[str] = None,
@@ -661,7 +777,34 @@ class FileSystemTestUtilsDirEvents(GeneralUtils):
 
         for event in input_events:
             if isinstance(event, DirUpdatedWithinWatchedDirFSInputEvent):
-                self.validate_dir_update_input_event(
+                self.validate_dir_update_input_event_within_watched_dir(
+                    input_event=event, dir_path=dir_path, message=message
+                )
+                return
+
+        raise AssertionError(
+            f"UpdatedDirFSInputEvent not found in input_events - {input_events}"
+        )
+
+    def check_queue_for_dir_update_input_event_of_watched_dir(
+        self,
+        output_queue: Union[asyncio.Queue[InputEvent], List[InputEvent]],
+        dir_path: Optional[str] = None,
+        message: str = "",
+    ) -> None:
+        """
+        Check the given queue to see that there is a CreatedFileFSInputEvent in it.
+        """
+        if isinstance(output_queue, asyncio.Queue):
+            input_events = self.dump_queue_to_list(output_queue)
+        elif isinstance(output_queue, list):
+            input_events = output_queue
+        else:
+            raise NotImplementedError(f"{output_queue} of unsupported type")
+
+        for event in input_events:
+            if isinstance(event, DirUpdatedAtWatchLocationFSInputEvent):
+                self.validate_dir_update_input_event_of_watched_dir(
                     input_event=event, dir_path=dir_path, message=message
                 )
                 return
@@ -671,7 +814,7 @@ class FileSystemTestUtilsDirEvents(GeneralUtils):
         )
 
     @staticmethod
-    def validate_dir_update_input_event(
+    def validate_dir_update_input_event_within_watched_dir(
         input_event: InputEvent,
         dir_path: Optional[str] = None,
         message: str = "",
@@ -693,6 +836,32 @@ class FileSystemTestUtilsDirEvents(GeneralUtils):
             assert (
                 input_event.path == dir_path
             ), f"expected {dir_path} - got {input_event.path}"
+
+
+    @staticmethod
+    def validate_dir_update_input_event_of_watched_dir(
+        input_event: InputEvent,
+        dir_path: Optional[str] = None,
+        message: str = "",
+    ) -> None:
+        """
+        Validate a directory update input event.
+
+        :param input_event:
+        :param dir_path:
+        :param message:
+        :return:
+        """
+        err_str = f"Expected UpdatedDirFSInputEvent - got {input_event}" + (
+            f" - {message}" if message else ""
+        )
+        assert isinstance(input_event, DirUpdatedAtWatchLocationFSInputEvent), err_str
+
+        if dir_path is not None:
+            assert (
+                input_event.path == dir_path
+            ), f"expected {dir_path} - got {input_event.path}"
+
 
     async def process_input_file_creation_response(
         self, output_queue: asyncio.Queue[InputEvent], file_path: str = "", message: str = ""

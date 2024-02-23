@@ -95,27 +95,3 @@
 #     #             )
 #     #
 #     #         await self.cancel_task(run_task)
-#
-#     @pytest.mark.asyncio
-#     @pytest.mark.skipif(not sys.platform.startswith("win"), reason="Windows only test")
-#     async def testDirTypeFSInput_existing_dir_modify_file(self) -> None:
-#         """
-#         Create a file in a monitored dir, then modify it.
-#
-#         Checking for the right signals.
-#         This may not be working - windows modification events are weird.
-#         """
-#
-#         with tempfile.TemporaryDirectory() as tmp_dir_path:
-#             _, _, _ = await self.get_DirTypeFSInput(tmp_dir_path)
-#
-#             file_attribute_hidden = 0x02
-#
-#             ctypes.windll.kernel32.SetFileAttributesW(tmp_dir_path, file_attribute_hidden)
-#
-#             await asyncio.sleep(5)
-#
-#             new_path = os.path.join(tmp_dir_path, "test_dir")
-#             os.mkdir(new_path)
-#
-#             ctypes.windll.kernel32.SetFileAttributesW(new_path, file_attribute_hidden)

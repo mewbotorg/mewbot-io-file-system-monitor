@@ -39,7 +39,7 @@ class TestFileTypeFSInputLinux(FileSystemTestUtilsDirEvents, FileSystemTestUtils
     Tests that the expected file type events are produced from a monitored file.
     """
 
-    sleep_duration: float = 4.0
+    sleep_duration: float = 1.0
 
     async def create_overwrite_update_unlink_file(
         self, input_path: str, output_queue: asyncio.Queue[InputEvent], i: str = "Not in loop"
