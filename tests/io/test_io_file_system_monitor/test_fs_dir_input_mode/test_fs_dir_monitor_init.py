@@ -11,17 +11,13 @@ Tests the dir input - monitors a directory for changes.
 """
 
 import os
-import sys
 import tempfile
 
 import pytest
 
 from mewbot.io.file_system_monitor import DirTypeFSInput
 from mewbot.io.file_system_monitor.fs_events import (
-    DirUpdatedAtWatchLocationFSInputEvent,
     FileCreatedWithinWatchedDirFSInputEvent,
-    FileDeletedWithinWatchedDirFSInputEvent,
-    FileUpdatedWithinWatchedDirFSInputEvent,
 )
 from tests.io.test_io_file_system_monitor.fs_test_utils import (
     FileSystemTestUtilsDirEvents,

@@ -16,7 +16,6 @@ import asyncio
 import logging
 import os
 import shutil
-import sys
 import tempfile
 import uuid
 
@@ -31,7 +30,6 @@ from mewbot.io.file_system_monitor.fs_events import (
     DirUpdatedAtWatchLocationFSInputEvent,
     DirUpdatedWithinWatchedDirFSInputEvent,
     FileCreatedWithinWatchedDirFSInputEvent,
-    FileDeletedWithinWatchedDirFSInputEvent,
     FileMovedWithinWatchedDirFSInputEvent,
     FileUpdatedWithinWatchedDirFSInputEvent,
 )
@@ -76,7 +74,6 @@ class TestDirTypeFSInputGenericTests(
         caplog.set_level(logging.INFO)
 
         with tempfile.TemporaryDirectory() as tmp_dir_path:
-
             run_task, output_queue, _ = await self.get_DirTypeFSInput(tmp_dir_path)
 
             # Give the class a chance to do init
@@ -100,7 +97,6 @@ class TestDirTypeFSInputGenericTests(
 
             await self.cancel_task(run_task)
 
-
     # FILES IN DIRS
 
     @pytest.mark.asyncio
@@ -112,7 +108,6 @@ class TestDirTypeFSInputGenericTests(
         Followed by an attempt to update the file.
         """
         with tempfile.TemporaryDirectory() as tmp_dir_path:
-
             run_task, output_queue, _ = await self.get_DirTypeFSInput(tmp_dir_path)
 
             # - Using blocking methods - this should still work
@@ -127,34 +122,30 @@ class TestDirTypeFSInputGenericTests(
             output_queue_size = output_queue.qsize()
 
             if output_queue_size == 4:
-
                 await self.process_file_event_queue_response(
                     output_queue=output_queue,
                     file_path=new_file_path,
                     event_type=FileCreatedWithinWatchedDirFSInputEvent,
-                    allowed_queue_size=3
+                    allowed_queue_size=3,
                 )
 
             elif output_queue_size == 3:
-
                 await self.process_file_event_queue_response(
                     output_queue=output_queue,
                     file_path=new_file_path,
                     event_type=FileCreatedWithinWatchedDirFSInputEvent,
-                    allowed_queue_size=2
+                    allowed_queue_size=2,
                 )
 
             elif output_queue_size == 2:
-
                 await self.process_file_event_queue_response(
                     output_queue=output_queue,
                     file_path=new_file_path,
                     event_type=FileCreatedWithinWatchedDirFSInputEvent,
-                    allowed_queue_size=1
+                    allowed_queue_size=1,
                 )
 
             elif output_queue_size == 1:
-
                 await self.process_file_event_queue_response(
                     output_queue=output_queue,
                     file_path=new_file_path,
@@ -162,7 +153,9 @@ class TestDirTypeFSInputGenericTests(
                 )
 
             else:
-                raise NotImplementedError(f"Queue size of {output_queue.qsize()} not recognised")
+                raise NotImplementedError(
+                    f"Queue size of {output_queue.qsize()} not recognised"
+                )
 
             await self.cancel_task(run_task)
 
@@ -539,7 +532,6 @@ class TestDirTypeFSInputGenericTests(
                 )
 
             elif output_queue.qsize() == 5:
-
                 await self.process_dir_event_queue_response(
                     output_queue=output_queue,
                     dir_path=tmp_dir_path,
@@ -650,7 +642,6 @@ class TestDirTypeFSInputGenericTests(
                     )
 
                 elif output_queue.qsize() == 4:
-
                     await self.process_dir_event_queue_response(
                         output_queue=output_queue,
                         dir_path=new_subfolder_path,
@@ -662,15 +653,14 @@ class TestDirTypeFSInputGenericTests(
                         output_queue=output_queue,
                         dir_path=new_subfolder_path,
                         event_type=DirMovedWithinWatchedDirFSInputEvent,
-                        allowed_queue_size=[0, 1, 2, 3]
+                        allowed_queue_size=[0, 1, 2, 3],
                     )
 
                     await self.process_dir_event_queue_response(
                         output_queue=output_queue,
                         dir_path=new_subfolder_path,
                         event_type=DirUpdatedWithinWatchedDirFSInputEvent,
-                        allowed_queue_size=[0, 1, 2, 3]
-
+                        allowed_queue_size=[0, 1, 2, 3],
                     )
 
                 else:
@@ -682,57 +672,53 @@ class TestDirTypeFSInputGenericTests(
                 await asyncio.sleep(1.0)
 
                 if output_queue.qsize() == 2:
-
                     output_queue_list = self.dump_queue_to_list(output_queue)
 
-                    if isinstance(output_queue_list[0], DirUpdatedWithinWatchedDirFSInputEvent):
-
+                    if isinstance(
+                        output_queue_list[0], DirUpdatedWithinWatchedDirFSInputEvent
+                    ):
                         self.validate_dir_input_event(
                             input_event=output_queue_list[0],
                             event_type=DirUpdatedWithinWatchedDirFSInputEvent,
-                            dir_path=tmp_dir_path
+                            dir_path=tmp_dir_path,
                         )
                         self.validate_dir_input_event(
                             input_event=output_queue_list[1],
                             event_type=DirDeletedFromWatchedDirFSInputEvent,
-                            dir_path=post_move_dir_path
+                            dir_path=post_move_dir_path,
                         )
 
                     else:
-
                         self.validate_dir_input_event(
                             input_event=output_queue_list[1],
                             event_type=DirUpdatedWithinWatchedDirFSInputEvent,
-                            dir_path=new_subfolder_path
+                            dir_path=new_subfolder_path,
                         )
                         self.validate_dir_input_event(
                             input_event=output_queue_list[0],
                             event_type=DirDeletedFromWatchedDirFSInputEvent,
-                            dir_path=post_move_dir_path
+                            dir_path=post_move_dir_path,
                         )
 
                 elif output_queue.qsize() == 3:
-
                     # Sometimes the target file sees an update before delete
                     await self.process_dir_event_queue_response(
                         output_queue=output_queue,
                         dir_path=post_move_dir_path,
                         event_type=DirUpdatedWithinWatchedDirFSInputEvent,
-                        allowed_queue_size=[0, 1, 2, 3]
+                        allowed_queue_size=[0, 1, 2, 3],
                     )
                     await self.process_dir_event_queue_response(
                         output_queue=output_queue,
                         dir_path=tmp_dir_path,
                         event_type=DirUpdatedWithinWatchedDirFSInputEvent,
-                        allowed_queue_size=[0, 1, 2, 3]
-
+                        allowed_queue_size=[0, 1, 2, 3],
                     )
                     await self.process_dir_event_queue_response(
                         output_queue=output_queue,
                         dir_path=post_move_dir_path,
                         event_type=DirDeletedFromWatchedDirFSInputEvent,
-                        allowed_queue_size=[0, 1, 2, 3]
-
+                        allowed_queue_size=[0, 1, 2, 3],
                     )
 
                 else:

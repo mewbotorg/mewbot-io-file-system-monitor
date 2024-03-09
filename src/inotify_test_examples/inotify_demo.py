@@ -3,7 +3,7 @@ Conclusion: inotify is borked (on wsl).
 """
 
 
-import inotify.adapters
+import inotify.adapters  # type: ignore
 
 
 def _main():

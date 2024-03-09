@@ -4,6 +4,7 @@ from ctypes import CDLL, c_int, get_errno
 from ctypes.util import find_library
 from enum import IntEnum
 from errno import EINTR
+
 try:
     from fcntl import ioctl
 except ModuleNotFoundError:
@@ -11,12 +12,14 @@ except ModuleNotFoundError:
 
 from io import FileIO
 from os import fsdecode, fsencode
+
 try:
     from select import poll
 except ImportError:
     poll = None
 
 from struct import calcsize, unpack_from
+
 try:
     from termios import FIONREAD
 except ModuleNotFoundError:

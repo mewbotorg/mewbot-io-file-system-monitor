@@ -96,6 +96,7 @@ class DirCreatedAtWatchLocationFSInputEvent(DirAtWatchLocInputEvent):
     """
     A directory has been created on the system within a dir being monitored.
     """
+
     origin: str = ""
 
 
@@ -137,7 +138,6 @@ class DirDeletedFromWatchLocationFSInputEvent(DirAtWatchLocInputEvent):
     """
 
     origin: str = ""
-
 
 
 # - WITHIN THE DIR AT LOCATION
@@ -193,7 +193,6 @@ class FileMovedOutsideWatchedDirFSInputEvent(WithinDirAtWatchLocInputEvent):
     origin: str = ""
 
 
-
 @dataclasses.dataclass
 class FileDeletedWithinWatchedDirFSInputEvent(WithinDirAtWatchLocInputEvent):
     """
@@ -201,7 +200,6 @@ class FileDeletedWithinWatchedDirFSInputEvent(WithinDirAtWatchLocInputEvent):
     """
 
     origin: str = ""
-
 
 
 # - DIR AT LOCATION
@@ -237,7 +235,6 @@ class DirMovedWithinWatchedDirFSInputEvent(WithinDirAtWatchLocInputEvent):
     origin: str = ""
 
 
-
 @dataclasses.dataclass
 class DirMovedOutOfWatchedDirFSInputEvent(WithinDirAtWatchLocInputEvent):
     """
@@ -250,11 +247,11 @@ class DirMovedOutOfWatchedDirFSInputEvent(WithinDirAtWatchLocInputEvent):
     origin: str = ""
 
 
-
 @dataclasses.dataclass
 class DirDeletedFromWatchedDirFSInputEvent(WithinDirAtWatchLocInputEvent):
     """
     A dir has been deleted from the location being watched.
     """
+
     # Used during debug - where and how was the event generated
     origin: str = ""

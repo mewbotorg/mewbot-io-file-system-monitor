@@ -21,8 +21,8 @@ import watchdog
 from mewbot.core import InputEvent
 
 from mewbot.io.file_system_monitor.fs_events import (
+    DirCreatedAtWatchLocationFSInputEvent,
     DirCreatedWithinWatchedDirFSInputEvent,
-DirCreatedAtWatchLocationFSInputEvent,
     DirDeletedFromWatchedDirFSInputEvent,
     DirDeletedFromWatchLocationFSInputEvent,
     DirMovedOutOfWatchedDirFSInputEvent,
@@ -41,9 +41,7 @@ from mewbot.io.file_system_monitor.mewbot_inotify.mewbot_inotify_recursive impor
     INotify,
     flags,
 )
-from mewbot.io.file_system_monitor.mewbot_inotify.mewbot_inotify_simple import (
-    flags,
-)
+from mewbot.io.file_system_monitor.mewbot_inotify.mewbot_inotify_simple import flags
 from mewbot.io.file_system_monitor.monitors.dir_monitor.event_handler import (
     MewbotEventHandler,
 )
@@ -364,7 +362,6 @@ class INotifyFileSystemObserver(BaseLinuxFileSystemObserver):
             await asyncio.sleep(0.1)
 
         self._logger.info("Ending inotify poll - %s", wd)
-
 
 
 class WatchdogLinuxFileSystemObserver(BaseLinuxFileSystemObserver):

@@ -17,5 +17,3 @@ From what I understand
 
 
 """
-
-

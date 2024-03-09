@@ -18,18 +18,18 @@ from mewbot.io.file_system_monitor.fs_events import (
     DirCreatedWithinWatchedDirFSInputEvent,
     DirDeletedFromWatchedDirFSInputEvent,
     DirMovedWithinWatchedDirFSInputEvent,
+    DirUpdatedAtWatchLocationFSInputEvent,
     DirUpdatedWithinWatchedDirFSInputEvent,
-DirUpdatedAtWatchLocationFSInputEvent,
     FileAtWatchLocInputEvent,
     FileCreatedAtWatchLocationFSInputEvent,
-FileCreatedWithinWatchedDirFSInputEvent,
+    FileCreatedWithinWatchedDirFSInputEvent,
     FileDeletedFromWatchLocationFSInputEvent,
     FileMovedWithinWatchedDirFSInputEvent,
     FileUpdatedAtWatchLocationFSInputEvent,
-FileUpdatedWithinWatchedDirFSInputEvent
+    FileUpdatedWithinWatchedDirFSInputEvent,
 )
 
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name, too-many-lines
 # for clarity, factory functions should be named after the things they test
 
 
@@ -169,7 +169,9 @@ class GeneralUtils:
         :return:
         """
         if isinstance(allowed_queue_size, int):
-            allowed_queue_size = [allowed_queue_size, ]
+            allowed_queue_size = [
+                allowed_queue_size,
+            ]
         if 0 not in allowed_queue_size:
             allowed_queue_size.append(0)
 
@@ -203,7 +205,7 @@ class FileSystemTestUtilsFileEvents(GeneralUtils):
         event_type: Any,
         file_path: Optional[str] = None,
         allowed_queue_size: Union[int, list[int]] = 0,
-        message: Optional[str] = None
+        message: Optional[str] = None,
     ) -> None:
         """
         Get the next event off the queue.
@@ -293,7 +295,9 @@ class FileSystemTestUtilsFileEvents(GeneralUtils):
             )
             input_event_path = getattr(input_event, "path")
 
-            assert input_event_path == file_path, f"Expected {input_event_path}, got {file_path}"
+            assert (
+                input_event_path == file_path
+            ), f"Expected {input_event_path}, got {file_path}"
 
     def check_queue_for_file_creation_input_event_within_watch_loc(
         self,
@@ -837,7 +841,6 @@ class FileSystemTestUtilsDirEvents(GeneralUtils):
                 input_event.path == dir_path
             ), f"expected {dir_path} - got {input_event.path}"
 
-
     @staticmethod
     def validate_dir_update_input_event_of_watched_dir(
         input_event: InputEvent,
@@ -861,7 +864,6 @@ class FileSystemTestUtilsDirEvents(GeneralUtils):
             assert (
                 input_event.path == dir_path
             ), f"expected {dir_path} - got {input_event.path}"
-
 
     async def process_input_file_creation_response(
         self, output_queue: asyncio.Queue[InputEvent], file_path: str = "", message: str = ""

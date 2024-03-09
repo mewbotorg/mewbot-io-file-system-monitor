@@ -73,10 +73,10 @@ class INotify(inotify_simple.INotify):
         del self.__info[wd]
         logging.debug("Removed info for watch %d" % wd)
 
-    def __add_watch_recursive(self, path, mask, filter, name, parent, loose=True):
+    def __add_watch_recursive(self, path, mask, filter, name, parent, loose: bool = True):
         try:
             if filter is not None and not filter(name, parent, True):
-                logging.debug("Name has been filtered, not adding watch: %s" % name)
+                logging.debug("Name has been filtered, not adding watch: %s", name)
                 return
             wd = inotify_simple.INotify.add_watch(
                 self,
@@ -97,7 +97,7 @@ class INotify(inotify_simple.INotify):
             return wd
         except OSError as e:
             if loose and e.errno == 2:
-                logging.debug("Cannot add watch, path not found: %s" % path)
+                logging.debug("Cannot add watch, path not found: %s", path)
                 return
             else:
                 raise

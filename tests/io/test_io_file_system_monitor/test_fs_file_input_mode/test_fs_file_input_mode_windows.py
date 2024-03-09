@@ -12,7 +12,6 @@ Tests for the file input mode for the file_system_monitor IOConfig.
 
 import asyncio
 import os
-import logging
 import sys
 import tempfile
 import uuid
@@ -20,9 +19,10 @@ import uuid
 import pytest
 from mewbot.api.v1 import InputEvent
 
-from mewbot.io.file_system_monitor import FileTypeFSInput
 from mewbot.io.file_system_monitor.fs_events import (
-    FileUpdatedAtWatchLocationFSInputEvent, FileCreatedAtWatchLocationFSInputEvent, FileDeletedFromWatchLocationFSInputEvent
+    FileCreatedAtWatchLocationFSInputEvent,
+    FileDeletedFromWatchLocationFSInputEvent,
+    FileUpdatedAtWatchLocationFSInputEvent,
 )
 from tests.io.test_io_file_system_monitor.fs_test_utils import (
     FileSystemTestUtilsDirEvents,

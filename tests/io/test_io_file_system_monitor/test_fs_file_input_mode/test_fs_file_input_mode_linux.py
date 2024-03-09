@@ -11,8 +11,8 @@ Tests for the file input mode for the file_system_monitor IOConfig.
 """
 
 import asyncio
-import os
 import logging
+import os
 import sys
 import tempfile
 import uuid
@@ -22,7 +22,9 @@ from mewbot.api.v1 import InputEvent
 
 from mewbot.io.file_system_monitor import FileTypeFSInput
 from mewbot.io.file_system_monitor.fs_events import (
-    FileUpdatedAtWatchLocationFSInputEvent, FileCreatedAtWatchLocationFSInputEvent, FileDeletedFromWatchLocationFSInputEvent
+    FileCreatedAtWatchLocationFSInputEvent,
+    FileDeletedFromWatchLocationFSInputEvent,
+    FileUpdatedAtWatchLocationFSInputEvent,
 )
 from tests.io.test_io_file_system_monitor.fs_test_utils import (
     FileSystemTestUtilsDirEvents,
@@ -79,7 +81,7 @@ class TestFileTypeFSInputLinux(FileSystemTestUtilsDirEvents, FileSystemTestUtils
             output_queue=output_queue,
             event_type=FileUpdatedAtWatchLocationFSInputEvent,
             file_path=input_path,
-            message=f"Failing on the first write of loop {i}"
+            message=f"Failing on the first write of loop {i}",
         )
 
         with open(input_path, "a", encoding="utf-8") as test_outfile:
@@ -117,8 +119,9 @@ class TestFileTypeFSInputLinux(FileSystemTestUtilsDirEvents, FileSystemTestUtils
             run_task, output_queue = await self.get_FileTypeFSInput(input_path)
 
             for loop_num in range(10):
-
-                await self.create_overwrite_update_unlink_file(input_path, output_queue, i=str(loop_num))
+                await self.create_overwrite_update_unlink_file(
+                    input_path, output_queue, i=str(loop_num)
+                )
 
                 await asyncio.sleep(self.sleep_duration)
 
@@ -198,7 +201,9 @@ class TestFileTypeFSInputLinux(FileSystemTestUtilsDirEvents, FileSystemTestUtils
 
     @pytest.mark.asyncio
     @pytest.mark.skipif(sys.platform.startswith("win"), reason="Linux (like) only test")
-    async def test_FileTypeFSInput_existing_file_io_in_non_existing_file_linux(self, caplog) -> None:
+    async def test_FileTypeFSInput_existing_file_io_in_non_existing_file_linux(
+        self, caplog
+    ) -> None:
         """
         Start without  file, create it, append to it and loop - looking for ghost events.
 
@@ -212,7 +217,6 @@ class TestFileTypeFSInputLinux(FileSystemTestUtilsDirEvents, FileSystemTestUtils
         caplog.set_level(logging.INFO)
 
         with tempfile.TemporaryDirectory() as tmp_dir_path:
-
             # io will be done on this file
             tmp_file_path = os.path.join(tmp_dir_path, "mewbot_test_file.test")
             # tmp_file_path = "/home/ajcameron/test_file.txt"
@@ -282,9 +286,7 @@ class TestFileTypeFSInputLinux(FileSystemTestUtilsDirEvents, FileSystemTestUtils
             # Generate some events which should end up in the queue
             # - Using blocking methods - this should still work
             with open(tmp_file_path, "w", encoding="utf-8") as test_outfile:
-                test_outfile.write(
-                    f"Testing string for mewbot - {str(uuid.uuid4())}"
-                )
+                test_outfile.write(f"Testing string for mewbot - {str(uuid.uuid4())}")
                 test_outfile.flush()
 
             await asyncio.sleep(self.sleep_duration)
@@ -308,7 +310,6 @@ class TestFileTypeFSInputLinux(FileSystemTestUtilsDirEvents, FileSystemTestUtils
             await asyncio.sleep(self.sleep_duration)
 
             for i in range(5):
-
                 # Check the input task is still running
                 task_exception = None
                 try:
@@ -338,13 +339,15 @@ class TestFileTypeFSInputLinux(FileSystemTestUtilsDirEvents, FileSystemTestUtils
                 # Give the task a chance to generate
                 await asyncio.sleep(self.sleep_duration)
 
-                assert output_queue.qsize() > 0, f"No event made it to the queue - \n{caplog.text}"
+                assert (
+                    output_queue.qsize() > 0
+                ), f"No event made it to the queue - \n{caplog.text}"
 
                 await self.process_file_event_queue_response(
                     output_queue=output_queue,
                     file_path=tmp_file_path,
                     event_type=FileUpdatedAtWatchLocationFSInputEvent,
-                    message=f"In loop {i}"
+                    message=f"In loop {i}",
                 )
 
                 # Delete the file - then recreate it
@@ -463,7 +466,6 @@ class TestFileTypeFSInputLinux(FileSystemTestUtilsDirEvents, FileSystemTestUtils
             await asyncio.sleep(self.sleep_duration)
 
             for i in range(5):
-
                 # Generate some events which should end up in the queue
                 # - Using blocking methods - this should still work
                 with open(tmp_file_path, "w", encoding="utf-8") as test_outfile:
@@ -525,7 +527,6 @@ class TestFileTypeFSInputLinux(FileSystemTestUtilsDirEvents, FileSystemTestUtils
                 )
 
                 await asyncio.sleep(self.sleep_duration)
-
 
             # Otherwise the queue seems to be blocking pytest from a clean exit.
             await self.cancel_task(run_task)

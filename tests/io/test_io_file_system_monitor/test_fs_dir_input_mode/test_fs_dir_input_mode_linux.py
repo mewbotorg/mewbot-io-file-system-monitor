@@ -10,29 +10,22 @@
 Tests the dir input - monitors a directory for changes - on any system.
 """
 
-from typing import Any
 
 import asyncio
-import logging
 import os
 import shutil
 import sys
 import tempfile
-import uuid
 
 import pytest
 
 from mewbot.io.file_system_monitor.fs_events import (
-    DirCreatedAtWatchLocationFSInputEvent,
     DirCreatedWithinWatchedDirFSInputEvent,
     DirDeletedFromWatchedDirFSInputEvent,
-    DirDeletedFromWatchLocationFSInputEvent,
     DirMovedWithinWatchedDirFSInputEvent,
     DirUpdatedAtWatchLocationFSInputEvent,
-    DirUpdatedWithinWatchedDirFSInputEvent,
     FileCreatedWithinWatchedDirFSInputEvent,
     FileDeletedWithinWatchedDirFSInputEvent,
-    FileMovedWithinWatchedDirFSInputEvent,
     FileUpdatedWithinWatchedDirFSInputEvent,
 )
 from tests.io.test_io_file_system_monitor.fs_test_utils import (
@@ -89,7 +82,7 @@ class TestDirTypeFSInputLinuxTests(
                 output_queue=output_queue,
                 file_path=new_file_path,
                 event_type=FileCreatedWithinWatchedDirFSInputEvent,
-                allowed_queue_size=[0, 1, 2, 3]
+                allowed_queue_size=[0, 1, 2, 3],
             )
 
             with open(new_file_path, "a", encoding="utf-16") as output_file:
@@ -110,8 +103,7 @@ class TestDirTypeFSInputLinuxTests(
             # Need to do some detailed analysis of the queue - multiple outcomes are fine
             if len(queue_list) == 1:
                 self.validate_dir_update_input_event_within_watched_dir(
-                    input_event=queue_list[0],
-                    dir_path=tmp_dir_path
+                    input_event=queue_list[0], dir_path=tmp_dir_path
                 )
 
             queue_list = self.dump_queue_to_list(output_queue)
@@ -131,17 +123,16 @@ class TestDirTypeFSInputLinuxTests(
             self.validate_dir_input_event(
                 queue_list[1],
                 dir_path=tmp_dir_path,
-                event_type=DirUpdatedAtWatchLocationFSInputEvent
+                event_type=DirUpdatedAtWatchLocationFSInputEvent,
             )
 
             self.validate_file_input_event(
                 queue_list[0],
                 file_path=new_file_path,
-                event_type=FileDeletedWithinWatchedDirFSInputEvent
+                event_type=FileDeletedWithinWatchedDirFSInputEvent,
             )
 
             await self.cancel_task(run_task)
-
 
     @pytest.mark.asyncio
     @pytest.mark.skipif(sys.platform.startswith("win"), reason="Linux (like) only test")
@@ -176,7 +167,7 @@ class TestDirTypeFSInputLinuxTests(
                 output_queue=output_queue,
                 dir_path=tmp_dir_path,
                 event_type=DirUpdatedAtWatchLocationFSInputEvent,
-                allowed_queue_size=[0, 1, 2]
+                allowed_queue_size=[0, 1, 2],
             )
 
             await asyncio.sleep(self.sleep_delay)
@@ -189,7 +180,6 @@ class TestDirTypeFSInputLinuxTests(
             )
 
             await self.cancel_task(run_task)
-
 
     @pytest.mark.asyncio
     @pytest.mark.skipif(sys.platform.startswith("win"), reason="Linux (like) only test")
@@ -226,7 +216,7 @@ class TestDirTypeFSInputLinuxTests(
                 output_queue=output_queue,
                 dir_path=tmp_dir_path,
                 event_type=DirUpdatedAtWatchLocationFSInputEvent,
-                allowed_queue_size=[0, 1, 2, 3]
+                allowed_queue_size=[0, 1, 2, 3],
             )
 
             # - we should then see a deletion event within the monitored dir
@@ -234,7 +224,7 @@ class TestDirTypeFSInputLinuxTests(
                 output_queue=output_queue,
                 dir_path=new_dir_path,
                 event_type=DirDeletedFromWatchedDirFSInputEvent,
-                allowed_queue_size=[0, 1, 2, 3]
+                allowed_queue_size=[0, 1, 2, 3],
             )
 
             await self.cancel_task(run_task)
@@ -274,10 +264,11 @@ class TestDirTypeFSInputLinuxTests(
 
             await self.cancel_task(run_task)
 
-
     @pytest.mark.asyncio
     @pytest.mark.skipif(sys.platform.startswith("win"), reason="linux (like) only test")
-    async def testDirTypeFSInput_existing_dir_create_move_dir_move_by_rename_linux(self) -> None:
+    async def testDirTypeFSInput_existing_dir_create_move_dir_move_by_rename_linux(
+        self,
+    ) -> None:
         """
         Create a dir in a monitored dir - then move it around via a rename.
         """
@@ -362,7 +353,7 @@ class TestDirTypeFSInputLinuxTests(
                 output_queue=output_queue,
                 dir_path=tmp_dir_path,
                 event_type=DirUpdatedAtWatchLocationFSInputEvent,
-                allowed_queue_size=[0, 1, 2]
+                allowed_queue_size=[0, 1, 2],
             )
 
             # This is an asymmetry between how files and folders handle delete
@@ -637,7 +628,7 @@ class TestDirTypeFSInputLinuxTests(
             self.check_queue_for_dir_input_event(
                 output_queue=output_queue_list,
                 event_type=DirMovedWithinWatchedDirFSInputEvent,
-                dir_path=new_dir_path
+                dir_path=new_dir_path,
             )
 
             await self.cancel_task(run_task)

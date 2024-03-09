@@ -1,6 +1,6 @@
 import os
 
-from inotifyrecursive import INotify, flags
+from inotifyrecursive import INotify, flags  # type: ignore
 
 os.mkdir("/tmp/inotify_test")
 

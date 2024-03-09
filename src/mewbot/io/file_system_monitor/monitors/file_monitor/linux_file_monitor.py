@@ -8,19 +8,19 @@ from typing import Any, Optional
 
 import asyncio
 
-from mewbot.io.file_system_monitor.monitors.file_monitor.base_file_monitor import (
-    BaseFileMonitor,
+from mewbot.io.file_system_monitor.fs_events import (
+    FileDeletedFromWatchLocationFSInputEvent,
+    FileUpdatedAtWatchLocationFSInputEvent,
 )
 from mewbot.io.file_system_monitor.mewbot_inotify.mewbot_inotify_recursive import (
     Event,
     INotify,
     flags,
 )
-from mewbot.io.file_system_monitor.mewbot_inotify.mewbot_inotify_simple import (
-    flags,
+from mewbot.io.file_system_monitor.mewbot_inotify.mewbot_inotify_simple import flags
+from mewbot.io.file_system_monitor.monitors.file_monitor.base_file_monitor import (
+    BaseFileMonitor,
 )
-
-from mewbot.io.file_system_monitor.fs_events import FileUpdatedAtWatchLocationFSInputEvent, FileDeletedFromWatchLocationFSInputEvent
 
 # Todo: Put the watchdog version here as well
 
@@ -43,7 +43,6 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
         If the file is detected as deleted, then shut down the watcher.
         """
         if self.inotify is None:
-
             self._logger.info("inotify is None - starting inotify")
 
         # Fire the watcher
@@ -52,7 +51,10 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
         if watcher_status is None:
             self._logger.info("Shutdown seen by monitor_file_watcher - shutting down")
         else:
-            self._logger.info("Unexpeted status seen by monitor_file_watcher from watch_file - %s", watcher_status)
+            self._logger.info(
+                "Unexpeted status seen by monitor_file_watcher from watch_file - %s",
+                watcher_status,
+            )
 
         return None
 
@@ -65,7 +67,6 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
         self._logger.info("About to start watching queue")
 
         while True:
-
             # Give the loop a chance to do something else
             await asyncio.sleep(0.1)
             try:
@@ -195,10 +196,11 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
 
         wd = inotify.add_watch(self._input_path_state.input_path, watch_flags)
 
-        self._logger.info("Starting inotify poll - polling every 0.1 seconds - with inotify %s", inotify)
+        self._logger.info(
+            "Starting inotify poll - polling every 0.1 seconds - with inotify %s", inotify
+        )
 
         while True:
-
             # self._logger.info("In loop - pulling events")
 
             events = tuple((event, event.name) for event in inotify.read(timeout=0.1))

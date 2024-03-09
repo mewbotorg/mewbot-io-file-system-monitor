@@ -11,8 +11,8 @@ Tests for the file input mode for the file_system_monitor IOConfig.
 """
 
 import asyncio
-import os
 import logging
+import os
 import shutil
 import tempfile
 import uuid
@@ -22,8 +22,8 @@ from mewbot.api.v1 import InputEvent
 
 from mewbot.io.file_system_monitor import FileTypeFSInput
 from mewbot.io.file_system_monitor.fs_events import (
+    FileDeletedFromWatchLocationFSInputEvent,
     FileUpdatedAtWatchLocationFSInputEvent,
-FileDeletedFromWatchLocationFSInputEvent
 )
 from tests.io.test_io_file_system_monitor.fs_test_utils import (
     FileSystemTestUtilsDirEvents,
@@ -182,7 +182,6 @@ class TestFileTypeFSInputGeneric(FileSystemTestUtilsDirEvents, FileSystemTestUti
             # )
 
             for i in range(20):
-
                 # Generate some events which should end up in the queue
                 # - Using blocking methods - this should still work
                 with open(tmp_file_path, "w", encoding="utf-8") as test_outfile:
@@ -200,25 +199,22 @@ class TestFileTypeFSInputGeneric(FileSystemTestUtilsDirEvents, FileSystemTestUti
                         pass
 
                 elif output_queue.qsize() == 1:
-
                     await self.process_file_event_queue_response(
                         output_queue=output_queue,
                         file_path=tmp_file_path,
                         event_type=FileUpdatedAtWatchLocationFSInputEvent,
-                        allowed_queue_size=0
+                        allowed_queue_size=0,
                     )
 
                 elif output_queue.qsize() == 2:
-
                     await self.process_file_event_queue_response(
                         output_queue=output_queue,
                         file_path=tmp_file_path,
                         event_type=FileUpdatedAtWatchLocationFSInputEvent,
-                        allowed_queue_size=1
+                        allowed_queue_size=1,
                     )
 
                 else:
-
                     raise NotImplementedError(output_queue.qsize())
 
             # Otherwise the queue seems to be blocking pytest from a clean exit.
@@ -242,13 +238,11 @@ class TestFileTypeFSInputGeneric(FileSystemTestUtilsDirEvents, FileSystemTestUti
             But it should be caught and an appopriate event generated
         """
         with tempfile.TemporaryDirectory() as tmp_dir_path:
-
             input_path = os.path.join(tmp_dir_path, "test_file_delete_me.txt")
 
             run_task, output_queue = await self.get_FileTypeFSInput(input_path)
 
             for i in range(10):
-
                 await asyncio.sleep(self.sleep_delay * 2)
 
                 with open(input_path, "w", encoding="utf-8") as test_outfile:
@@ -271,7 +265,7 @@ class TestFileTypeFSInputGeneric(FileSystemTestUtilsDirEvents, FileSystemTestUti
                     output_queue=output_queue,
                     file_path=input_path,
                     event_type=FileUpdatedAtWatchLocationFSInputEvent,
-                    allowed_queue_size=0
+                    allowed_queue_size=0,
                 )
 
                 await asyncio.sleep(self.sleep_delay * 2)
@@ -287,7 +281,7 @@ class TestFileTypeFSInputGeneric(FileSystemTestUtilsDirEvents, FileSystemTestUti
                     output_queue=output_queue,
                     file_path=input_path,
                     event_type=FileUpdatedAtWatchLocationFSInputEvent,
-                    allowed_queue_size=0
+                    allowed_queue_size=0,
                 )
 
                 test_dir_path = os.path.join(tmp_dir_path, "test_dir_del_me")
@@ -310,7 +304,7 @@ class TestFileTypeFSInputGeneric(FileSystemTestUtilsDirEvents, FileSystemTestUti
                     output_queue=output_queue,
                     file_path=input_path,
                     event_type=FileDeletedFromWatchLocationFSInputEvent,
-                    allowed_queue_size=0
+                    allowed_queue_size=0,
                 )
 
                 # Make a folder at the monitored path - this should produce no result

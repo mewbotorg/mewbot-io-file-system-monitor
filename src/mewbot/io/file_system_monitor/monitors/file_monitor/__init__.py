@@ -10,19 +10,11 @@ Stores the file monitor components for the file system monitor.
 
 from __future__ import annotations
 
-import sys
-
-from mewbot.io.file_system_monitor.monitors.file_monitor.linux_file_monitor import (
-    LinuxFileMonitorMixin,
-)
 from mewbot.io.file_system_monitor.monitors.file_monitor.windows_file_monitor import (
     WindowsFileMonitorMixin,
 )
 
-
-
 BaseFileMonitorMixin = WindowsFileMonitorMixin
-
 
 
 # if sys.platform == "win32":
