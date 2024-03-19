@@ -16,4 +16,11 @@
 #
 ################################################################################
 
-from .inotifyrecursive import *
+"""
+Internal version of inotify recursive - modified to conform to modern typing standards.
+
+Licensing for this component is different from the rest of this module.
+See above in this file.
+"""
+
+from mewbot.io.file_system_monitor.mewbot_inotify.mewbot_inotify_recursive.inotifyrecursive import *

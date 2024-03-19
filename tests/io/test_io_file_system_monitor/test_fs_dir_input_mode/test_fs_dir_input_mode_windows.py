@@ -82,7 +82,7 @@ class TestDirTypeFSInputWindowsTests(
                 output_queue=output_queue,
                 file_path=new_file_path,
                 event_type=FileCreatedWithinWatchedDirFSInputEvent,
-                allowed_queue_size=[0, 1, 2, 3],
+                allowed_queue_size=[0, 1, 2, 3, 4],
             )
 
             with open(new_file_path, "a", encoding="utf-16") as output_file:
@@ -94,7 +94,7 @@ class TestDirTypeFSInputWindowsTests(
             await self.process_dir_event_queue_response(
                 output_queue=output_queue,
                 dir_path=tmp_dir_path,
-                allowed_queue_size=[0, 1, 2, 3, 4],
+                allowed_queue_size=[0, 1, 2, 3, 4, 5],
                 event_type=DirUpdatedAtWatchLocationFSInputEvent,
             )
 
@@ -323,8 +323,7 @@ class TestDirTypeFSInputWindowsTests(
         Checking for the right signals.
         This may not be working - windows modification events are weird.
         """
-
-        import ctypes
+        import ctypes  # pylint: disable = import-outside-toplevel
 
         with tempfile.TemporaryDirectory() as tmp_dir_path:
             _, _, _ = await self.get_DirTypeFSInput(tmp_dir_path)

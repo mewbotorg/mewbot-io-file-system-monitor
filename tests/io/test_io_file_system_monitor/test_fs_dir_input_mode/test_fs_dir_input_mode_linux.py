@@ -632,3 +632,55 @@ class TestDirTypeFSInputLinuxTests(
             )
 
             await self.cancel_task(run_task)
+
+    @pytest.mark.asyncio
+    @pytest.mark.skipif(sys.platform.startswith("win"), reason="Linux (like) only test")
+    async def testDirTypeFSInput_existing_dir_cre_del_dir_loop_linux(self) -> None:
+        """
+        Create, update and then delete a file in a loop.
+
+        Checks we get the expected created signal from a file which is created in a monitored dir.
+        Followed by an attempt to update the file.
+        Then an attempt to delete the file.
+        This is done in a loop - to check for any problems with stale events
+        """
+        with tempfile.TemporaryDirectory() as tmp_dir_path:
+            run_task, output_queue, _ = await self.get_DirTypeFSInput(tmp_dir_path)
+
+            for i in range(10):
+                # - Using blocking methods - this should still work
+                new_dir_path = os.path.join(tmp_dir_path, "text_file_delete_me_txt")
+
+                os.mkdir(new_dir_path)
+                if i == 0:
+                    await self.process_dir_event_queue_response(
+                        output_queue=output_queue,
+                        dir_path=new_dir_path,
+                        event_type=DirCreatedWithinWatchedDirFSInputEvent,
+                    )
+
+                else:
+                    await self.process_dir_event_queue_response(
+                        output_queue=output_queue,
+                        dir_path=tmp_dir_path,
+                        event_type=DirUpdatedAtWatchLocationFSInputEvent,
+                    )
+                    await self.process_dir_event_queue_response(
+                        output_queue=output_queue,
+                        dir_path=new_dir_path,
+                        event_type=DirCreatedWithinWatchedDirFSInputEvent,
+                    )
+
+                shutil.rmtree(new_dir_path)
+                await self.process_dir_event_queue_response(
+                    output_queue=output_queue,
+                    dir_path=tmp_dir_path,
+                    event_type=DirUpdatedAtWatchLocationFSInputEvent,
+                )
+                await self.process_dir_event_queue_response(
+                    output_queue=output_queue,
+                    dir_path=new_dir_path,
+                    event_type=DirDeletedFromWatchedDirFSInputEvent,
+                )
+
+            await self.cancel_task(run_task)

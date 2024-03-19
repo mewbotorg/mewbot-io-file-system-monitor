@@ -199,6 +199,7 @@ class TestFileTypeFSInputLinux(FileSystemTestUtilsDirEvents, FileSystemTestUtils
                 event_type=FileCreatedAtWatchLocationFSInputEvent,
             )
 
+    # pylint: disable=too-many-statements
     @pytest.mark.asyncio
     @pytest.mark.skipif(sys.platform.startswith("win"), reason="Linux (like) only test")
     async def test_FileTypeFSInput_existing_file_io_in_non_existing_file_linux(

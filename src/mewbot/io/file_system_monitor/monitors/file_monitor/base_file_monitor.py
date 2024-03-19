@@ -18,6 +18,10 @@ from mewbot.io.file_system_monitor.monitors.base_monitor import BaseMonitor, Inp
 
 
 class BaseFileMonitor(BaseMonitor):
+    """
+    Base class for file monitors - all file monitors should descend from this.
+    """
+
     _logger: logging.Logger
 
     _input_path_state: InputState = InputState()

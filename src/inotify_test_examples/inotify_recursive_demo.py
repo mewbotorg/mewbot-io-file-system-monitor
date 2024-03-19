@@ -1,3 +1,8 @@
+"""
+Demos recursively watching a directory for changes with inotify recursive.
+"""
+
+
 import os
 
 from inotifyrecursive import INotify, flags  # type: ignore

@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: BSD-2-Clause
 
+# -*- coding: utf-8 -*-
+
 """
-Needed a package for relative import of utils here.
+Contains tests for mewbot-file-system-monitor.
 """

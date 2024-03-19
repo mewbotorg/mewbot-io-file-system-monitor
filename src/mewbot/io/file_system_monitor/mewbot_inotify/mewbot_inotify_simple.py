@@ -1,3 +1,31 @@
+# Copyright (c) 2016, Chris Billington
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this
+#    list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided wi6h the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+"""
+Version of inotify simple, modified to be mypy compatible.
+"""
+
+
 import os
 from collections import namedtuple
 from ctypes import CDLL, c_int, get_errno
@@ -55,14 +83,21 @@ _EVENT_SIZE = calcsize(_EVENT_FMT)
 
 
 class INotify(FileIO):
-    #: The inotify file descriptor returned by ``inotify_init()``. You are
-    #: free to use it directly with ``os.read`` if you'd prefer not to call
-    #: :func:`~inotify_simple.INotify.read` for some reason. Also available as
-    #: :func:`~inotify_simple.INotify.fileno`
+    """
+    The inotify file descriptor returned by ``inotify_init()``.
+
+    You are free to use it directly with ``os.read`` if you'd prefer not to call
+    :func:`~inotify_simple.INotify.read` for some reason.
+    Also, available as :func:`~inotify_simple.INotify.fileno`
+    """
+
     fd = property(FileIO.fileno)
 
     def __init__(self, inheritable=False, nonblocking=False):
-        """File-like object wrapping ``inotify_init1()``. Raises ``OSError`` on failure.
+        """
+        File-like object wrapping ``inotify_init1()``.
+
+         Raises ``OSError`` on failure.
         :func:`~inotify_simple.INotify.close` should be called when no longer needed.
         Can be used as a context manager to ensure it is closed, and can be used
         directly by functions expecting a file-like object, such as ``select``, or with
@@ -85,7 +120,8 @@ class INotify(FileIO):
                 blocking behaviour according to the given timeout, but will cause other
                 reads of the file descriptor (for example if the application reads data
                 manually with ``os.read(fd)``) to raise ``BlockingIOError`` if no data
-                is available."""
+                is available.
+        """
         try:
             libc_so = find_library("c")
         except RuntimeError:  # Python on Synology NASs raises a RuntimeError
@@ -99,8 +135,12 @@ class INotify(FileIO):
         self._poller.register(self.fileno())
 
     def add_watch(self, path, mask):
-        """Wrapper around ``inotify_add_watch()``. Returns the watch
-        descriptor or raises an ``OSError`` on failure.
+        """
+        Calls the underlying c library to add a watch on a particular path.
+
+        Wrapper around ``inotify_add_watch()``.
+
+        Returns the watch descriptor or raises an ``OSError`` on failure.
 
         Args:
             path (str, bytes, or PathLike): The path to watch. Will be encoded with
@@ -110,21 +150,30 @@ class INotify(FileIO):
                 bitwise-ORing :class:`~inotify_simple.flags` together.
 
         Returns:
-            int: watch descriptor"""
+            int: watch descriptor
+        """
         # Explicit conversion of Path to str required on Python < 3.6
         path = str(path) if hasattr(path, "parts") else path
         return _libc_call(_libc.inotify_add_watch, self.fileno(), fsencode(path), mask)
 
     def rm_watch(self, wd):
-        """Wrapper around ``inotify_rm_watch()``. Raises ``OSError`` on failure.
+        """
+        Removes the watch from the underlying lib.
+
+        Wrapper around ``inotify_rm_watch()``.
+
+        Raises ``OSError`` on failure.
 
         Args:
-            wd (int): The watch descriptor to remove"""
+            wd (int): The watch descriptor to remove
+        """
         _libc_call(_libc.inotify_rm_watch, self.fileno(), wd)
 
     def read(self, timeout=None, read_delay=None):
-        """Read the inotify file descriptor and return the resulting
-        :attr:`~inotify_simple.Event` namedtuples (wd, mask, cookie, name).
+        """
+        Read the inotify file descriptor and return the resulting namedtuples.
+
+         This are :attr:`~inotify_simple.Event`  naemtuples - (wd, mask, cookie, name).
 
         Args:
             timeout (int): The time in milliseconds to wait for events if there are
@@ -166,16 +215,19 @@ class INotify(FileIO):
 
 
 def parse_events(data):
-    """Unpack data read from an inotify file descriptor into
-    :attr:`~inotify_simple.Event` namedtuples (wd, mask, cookie, name). This function
-    can be used if the application has read raw data from the inotify file
+    """
+    Unpack data read from an inotify file descriptor into :attr:`~inotify_simple.Event` namedtuples.
+
+    (wd, mask, cookie, name).
+    This function can be used if the application has read raw data from the inotify file
     descriptor rather than calling :func:`~inotify_simple.INotify.read`.
 
     Args:
         data (bytes): A bytestring as read from an inotify file descriptor.
 
     Returns:
-        list: list of :attr:`~inotify_simple.Event` namedtuples"""
+        list: list of :attr:`~inotify_simple.Event` namedtuples
+    """
     pos = 0
     events = []
     while pos < len(data):
@@ -187,9 +239,12 @@ def parse_events(data):
 
 
 class flags(IntEnum):
-    """Inotify flags as defined in ``inotify.h`` but with ``IN_`` prefix omitted.
+    """
+    Inotify flags as defined in ``inotify.h`` but with ``IN_`` prefix omitted.
+
     Includes a convenience method :func:`~inotify_simple.flags.from_mask` for extracting
-    flags from a mask."""
+    flags from a mask.
+    """
 
     ACCESS = 0x00000001  #: File was accessed
     MODIFY = 0x00000002  #: File was modified

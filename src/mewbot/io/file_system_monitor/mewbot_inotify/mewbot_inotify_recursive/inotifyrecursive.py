@@ -16,6 +16,10 @@
 #
 ################################################################################
 
+"""
+Part of the internal mewbot version of inotifyrecursive.
+"""
+
 import logging
 import os
 
@@ -29,6 +33,10 @@ Event = inotify_simple.Event
 
 
 class INotify(inotify_simple.INotify):
+    """
+    Recursive inotify monitor system.
+    """
+
     def __init__(self):
         inotify_simple.INotify.__init__(self)
         self.__info = {}
@@ -118,13 +126,33 @@ class INotify(inotify_simple.INotify):
                 raise
 
     def add_watch_recursive(self, path, mask, filter=None):
+        """
+        Recursively add a watch - adding a watch for every sub-dir in the tree.
+
+        :param path:
+        :param mask:
+        :param filter:
+        :return:
+        """
         name = os.path.split(path)[1]
         return self.__add_watch_recursive(path, mask, filter, name, -1, False)
 
     def rm_watch_recursive(self, wd):
+        """
+        Recursively remove a watch on every dir in a tree.
+
+        :param wd:
+        :return:
+        """
         self.__rm_watch_recursive(wd, False)
 
     def get_path(self, wd):
+        """
+        Get the originating path from the wd.
+
+        :param wd:
+        :return:
+        """
         path = self.__info[wd]["name"]
         parent = self.__info[wd]["parent"]
         while parent != -1:
@@ -134,6 +162,13 @@ class INotify(inotify_simple.INotify):
         return path
 
     def read(self, timeout=None, read_delay=None):
+        """
+        Attempt to read inotify information out of the file descriptor.
+
+        :param timeout:
+        :param read_delay:
+        :return:
+        """
         self.__clr_infos()
         events = []
         moved_from = {}

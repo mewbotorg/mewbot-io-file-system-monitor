@@ -16,6 +16,9 @@ from pathlib import Path
 import watchfiles
 from mewbot.api.v1 import InputEvent
 
+from mewbot.io.file_system_monitor.mewbot_inotify.mewbot_inotify_recursive import (
+    Event as INotifyEvent,
+)
 from mewbot.io.file_system_monitor.monitors.external_apis import WatchdogFileSystemEvent
 
 
@@ -26,7 +29,9 @@ class FSInputEvent(InputEvent):
     """
 
     # equivalent to FileSystemEvent, tuple[watchfiles.Change, str], None]
-    base_event: Optional[Union[WatchdogFileSystemEvent, tuple[watchfiles.Change, str]]]
+    base_event: Optional[
+        Union[INotifyEvent, WatchdogFileSystemEvent, tuple[watchfiles.Change, str]]
+    ]
     # You would expect the above to be equivalent to
     # base_event: Optional[
     #     Union[watchdog.events.FileSystemEvent, tuple[watchfiles.Change, str]]

@@ -15,7 +15,7 @@ if __name__ == "__main__":
         level=logging.INFO, format="%(asctime)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
     )
     path = sys.argv[1] if len(sys.argv) > 1 else "."
-    logging.info(f"start watching directory {path!r}")
+    logging.info("start watching directory %s", path)
     event_handler = LoggingEventHandler()
     observer = Observer()
     observer.schedule(event_handler, path, recursive=True)

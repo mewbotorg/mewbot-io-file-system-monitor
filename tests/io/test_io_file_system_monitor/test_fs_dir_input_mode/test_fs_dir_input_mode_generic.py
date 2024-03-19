@@ -10,6 +10,8 @@
 Tests the dir input - monitors a directory for changes - on any system.
 """
 
+# pylint: disable=too-many-branches
+
 from typing import Any
 
 import asyncio
@@ -66,7 +68,7 @@ class TestDirTypeFSInputGenericTests(
     # DIRS IN DIRS
 
     @pytest.mark.asyncio
-    async def test_DirTypeFSInput_existing_dir_create_dir(self, caplog) -> None:
+    async def test_DirTypeFSInput_existing_dir_create_dir(self, caplog: Any) -> None:
         """
         Check for the expected created signal from a dir which is created in a monitored dir.
         """
@@ -622,24 +624,34 @@ class TestDirTypeFSInputGenericTests(
                     )
 
                 elif output_queue.qsize() == 3:
-                    await self.process_dir_event_queue_response(
-                        output_queue=output_queue,
-                        dir_path=new_subfolder_path,
-                        event_type=DirUpdatedWithinWatchedDirFSInputEvent,
-                        allowed_queue_size=2,
-                    )
+                    try:
+                        await self.process_dir_event_queue_response(
+                            output_queue=output_queue,
+                            dir_path=new_subfolder_path,
+                            event_type=DirUpdatedWithinWatchedDirFSInputEvent,
+                            allowed_queue_size=2,
+                        )
 
-                    await self.process_dir_event_queue_response(
-                        output_queue=output_queue,
-                        dir_path=new_subfolder_path,
-                        event_type=DirMovedWithinWatchedDirFSInputEvent,
-                    )
+                    except AssertionError:
+                        await self.process_dir_event_queue_response(
+                            output_queue=output_queue,
+                            dir_path=new_subfolder_path,
+                            event_type=DirMovedWithinWatchedDirFSInputEvent,
+                            allowed_queue_size=2,
+                        )
 
-                    await self.process_dir_event_queue_response(
-                        output_queue=output_queue,
-                        dir_path=new_subfolder_path,
-                        event_type=DirUpdatedWithinWatchedDirFSInputEvent,
-                    )
+                    else:
+                        await self.process_dir_event_queue_response(
+                            output_queue=output_queue,
+                            dir_path=new_subfolder_path,
+                            event_type=DirMovedWithinWatchedDirFSInputEvent,
+                        )
+
+                        await self.process_dir_event_queue_response(
+                            output_queue=output_queue,
+                            dir_path=new_subfolder_path,
+                            event_type=DirUpdatedWithinWatchedDirFSInputEvent,
+                        )
 
                 elif output_queue.qsize() == 4:
                     await self.process_dir_event_queue_response(

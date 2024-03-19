@@ -54,4 +54,6 @@ known_typing = ["typing", "types", "collections.abc"]
 multi_line_output = 3
 
 [tool.bandit]
+exclude_dirs = ["src\\inotify_test_examples", "src/inotify_test_examples", "tests"]
 skips = ["B101", "B404", "B607", "B603"]
+

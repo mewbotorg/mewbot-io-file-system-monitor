@@ -4,7 +4,7 @@ This ... seems like it should just work.
 
 import os
 
-from inotify_simple import INotify, flags
+from inotify_simple import INotify, flags  # type: ignore
 
 os.mkdir("/tmp/inotify_test")
 

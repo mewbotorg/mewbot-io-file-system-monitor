@@ -199,7 +199,7 @@ class FileSystemTestUtilsFileEvents(GeneralUtils):
     Base class for tests to file monitors in particular.
     """
 
-    async def process_file_event_queue_response(
+    async def process_file_event_queue_response(  # pylint: disable=too-many-arguments
         self,
         output_queue: asyncio.Queue[InputEvent],
         event_type: Any,

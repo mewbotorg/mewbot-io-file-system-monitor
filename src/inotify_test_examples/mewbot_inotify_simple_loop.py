@@ -16,21 +16,21 @@ from mewbot.io.file_system_monitor.mewbot_inotify.mewbot_inotify_simple import (
 inotify = INotify()
 watch_flags = flags.CREATE | flags.DELETE | flags.MODIFY | flags.DELETE_SELF
 
-test_mewbot_path = "/home/ajcameron"
+TEST_MEWBOT_PATH = "/home/ajcameron"
 
-assert os.path.exists(test_mewbot_path)
+assert os.path.exists(TEST_MEWBOT_PATH)
 
-wd = inotify.add_watch(test_mewbot_path, watch_flags)
+wd = inotify.add_watch(TEST_MEWBOT_PATH, watch_flags)
 
-count = 1
+COUNT = 1
 
 while True:
     #
     # if not os.path.exists("/tmp/inotify_test"):
     #     os.mkdir("/tmp/inotify_test")
 
-    print(f"{count = }")
-    count += 1
+    print(f"{COUNT = }")
+    COUNT += 1
 
     time.sleep(20)
 
