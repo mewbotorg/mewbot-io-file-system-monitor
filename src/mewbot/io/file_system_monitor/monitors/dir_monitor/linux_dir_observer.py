@@ -427,7 +427,7 @@ class WatchdogLinuxFileSystemObserver(BaseLinuxFileSystemObserver):
             event_handler=handler, path=self._input_path, recursive=True
         )
         self._watchdog_observer.start()  # type: ignore
-        self._watchdog_observer.is_alive()  # type: ignore
+        self._watchdog_observer.is_alive()
 
         self._logger.info("Started _watchdog_observer")
 

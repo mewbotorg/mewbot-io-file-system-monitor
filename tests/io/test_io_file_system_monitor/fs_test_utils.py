@@ -24,6 +24,7 @@ from mewbot.io.file_system_monitor.fs_events import (
     FileCreatedAtWatchLocationFSInputEvent,
     FileCreatedWithinWatchedDirFSInputEvent,
     FileDeletedFromWatchLocationFSInputEvent,
+    FileDeletedWithinWatchedDirFSInputEvent,
     FileMovedWithinWatchedDirFSInputEvent,
     FileUpdatedAtWatchLocationFSInputEvent,
     FileUpdatedWithinWatchedDirFSInputEvent,
@@ -269,9 +270,10 @@ class FileSystemTestUtilsFileEvents(GeneralUtils):
             Type[FileAtWatchLocInputEvent],
             Type[FileCreatedAtWatchLocationFSInputEvent],
             Type[FileDeletedFromWatchLocationFSInputEvent],
+            type[FileDeletedWithinWatchedDirFSInputEvent],
         ],
         file_path: Optional[str] = None,
-        message: str = "",
+        message: Optional[str] = "",
     ) -> None:
         """
         Check that the given input event is of the expected type.
@@ -680,7 +682,7 @@ class FileSystemTestUtilsDirEvents(GeneralUtils):
     def check_queue_for_dir_input_event(
         self,
         output_queue: Union[asyncio.Queue[InputEvent], List[InputEvent]],
-        event_type: Type[DirTypeFSInput],
+        event_type: Type[DirTypeFSInput] | type[DirMovedWithinWatchedDirFSInputEvent],
         dir_path: Optional[str] = None,
         message: str = "",
     ) -> None:
@@ -717,7 +719,9 @@ class FileSystemTestUtilsDirEvents(GeneralUtils):
     @staticmethod
     def validate_dir_input_event(
         input_event: InputEvent,
-        event_type: Type[InputEvent],
+        event_type: type[InputEvent]
+        | type[DirTypeFSInput]
+        | type[DirMovedWithinWatchedDirFSInputEvent],
         dir_path: Optional[str] = None,
         message: str = "",
     ) -> None:

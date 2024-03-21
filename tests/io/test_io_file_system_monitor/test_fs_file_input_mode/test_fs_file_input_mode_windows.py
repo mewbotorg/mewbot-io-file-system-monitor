@@ -33,6 +33,8 @@ from tests.io.test_io_file_system_monitor.fs_test_utils import (
 # for clarity, test functions should be named after the things they test
 # which means CamelCase in function names
 
+# pylint: disable=duplicate-code
+
 
 class TestFileTypeFSInputWindows(FileSystemTestUtilsDirEvents, FileSystemTestUtilsFileEvents):
     """

@@ -10,6 +10,8 @@
 Tests for the file input mode for the file_system_monitor IOConfig.
 """
 
+from typing import Any
+
 import asyncio
 import logging
 import os
@@ -135,7 +137,9 @@ class TestFileTypeFSInputGeneric(FileSystemTestUtilsDirEvents, FileSystemTestUti
             # Tests are making a clean exist after this test
 
     @pytest.mark.asyncio
-    async def test_FileTypeFSInput_existing_file_io_in_existing_file(self, caplog) -> None:
+    async def test_FileTypeFSInput_existing_file_io_in_existing_file(
+        self, caplog: Any
+    ) -> None:
         """
         Starting the monitor on a file which already exists.
 

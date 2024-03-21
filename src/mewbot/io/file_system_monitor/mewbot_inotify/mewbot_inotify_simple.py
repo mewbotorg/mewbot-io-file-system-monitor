@@ -26,6 +26,8 @@ Version of inotify simple, modified to be mypy compatible.
 """
 
 
+from typing import Generator, Optional
+
 import os
 from collections import namedtuple
 from ctypes import CDLL, c_int, get_errno
@@ -34,9 +36,9 @@ from enum import IntEnum
 from errno import EINTR
 
 try:
-    from fcntl import ioctl
+    from fcntl import ioctl as FCNTL_IOCTL
 except ModuleNotFoundError:
-    ioctl = None
+    FCNTL_IOCTL = None
 
 from io import FileIO
 from os import fsdecode, fsencode
@@ -59,11 +61,13 @@ __version__ = "1.3.5"
 
 __all__ = ["Event", "INotify", "flags", "masks", "parse_events"]
 
-_libc = None
+_LIBC = None
 
 
 def _libc_call(function, *args):
-    """Wrapper which raises errors and retries on EINTR."""
+    """
+    Wrapper which raises errors and retries on EINTR.
+    """
     while True:
         rc = function(*args)
         if rc != -1:
@@ -91,9 +95,9 @@ class INotify(FileIO):
     Also, available as :func:`~inotify_simple.INotify.fileno`
     """
 
-    fd = property(FileIO.fileno)
+    fd: int = property(FileIO.fileno)
 
-    def __init__(self, inheritable=False, nonblocking=False):
+    def __init__(self, inheritable: bool = False, nonblocking: bool = False) -> None:
         """
         File-like object wrapping ``inotify_init1()``.
 
@@ -126,15 +130,16 @@ class INotify(FileIO):
             libc_so = find_library("c")
         except RuntimeError:  # Python on Synology NASs raises a RuntimeError
             libc_so = None
-        global _libc
-        _libc = _libc or CDLL(libc_so or "libc.so.6", use_errno=True)
-        O_CLOEXEC = getattr(os, "O_CLOEXEC", 0)  # Only defined in Python 3.3+
-        flags = (not inheritable) * O_CLOEXEC | bool(nonblocking) * os.O_NONBLOCK
-        FileIO.__init__(self, _libc_call(_libc.inotify_init1, flags), mode="rb")
+        global _LIBC  # pylint: disable=global-statement
+        _LIBC = _LIBC or CDLL(libc_so or "libc.so.6", use_errno=True)
+        zero_cloexec = getattr(os, "O_CLOEXEC", 0)  # Only defined in Python 3.3+
+        # pylint: disable=no-member
+        current_flags = (not inheritable) * zero_cloexec | bool(nonblocking) * os.O_NONBLOCK
+        FileIO.__init__(self, _libc_call(_LIBC.inotify_init1, current_flags), mode="rb")
         self._poller = poll()
         self._poller.register(self.fileno())
 
-    def add_watch(self, path, mask):
+    def add_watch(self, path: str | bytes | os.PathLike, mask: int) -> int:
         """
         Calls the underlying c library to add a watch on a particular path.
 
@@ -154,9 +159,9 @@ class INotify(FileIO):
         """
         # Explicit conversion of Path to str required on Python < 3.6
         path = str(path) if hasattr(path, "parts") else path
-        return _libc_call(_libc.inotify_add_watch, self.fileno(), fsencode(path), mask)
+        return _libc_call(_LIBC.inotify_add_watch, self.fileno(), fsencode(path), mask)
 
-    def rm_watch(self, wd):
+    def rm_watch(self, wd: int) -> None:
         """
         Removes the watch from the underlying lib.
 
@@ -167,13 +172,15 @@ class INotify(FileIO):
         Args:
             wd (int): The watch descriptor to remove
         """
-        _libc_call(_libc.inotify_rm_watch, self.fileno(), wd)
+        _libc_call(_LIBC.inotify_rm_watch, self.fileno(), wd)
 
-    def read(self, timeout=None, read_delay=None):
+    def read(
+        self, timeout: Optional[int] = None, read_delay: Optional[int] = None
+    ) -> Generator[Event, None, None]:
         """
         Read the inotify file descriptor and return the resulting namedtuples.
 
-         This are :attr:`~inotify_simple.Event`  naemtuples - (wd, mask, cookie, name).
+         These are :attr:`~inotify_simple.Event`  naemtuples - (wd, mask, cookie, name).
 
         Args:
             timeout (int): The time in milliseconds to wait for events if there are
@@ -206,15 +213,20 @@ class INotify(FileIO):
             data = self._readall()
         return parse_events(data)
 
-    def _readall(self):
+    def _readall(self) -> bytes:
+        """
+        Read bytes from the file descriptor.
+
+        :return:
+        """
         bytes_avail = c_int()
-        ioctl(self, FIONREAD, bytes_avail)
+        FCNTL_IOCTL(self, FIONREAD, bytes_avail)
         if not bytes_avail.value:
             return b""
         return os.read(self.fileno(), bytes_avail.value)
 
 
-def parse_events(data):
+def parse_events(data: bytes) -> list[Event]:
     """
     Unpack data read from an inotify file descriptor into :attr:`~inotify_simple.Event` namedtuples.
 
@@ -238,7 +250,7 @@ def parse_events(data):
     return events
 
 
-class flags(IntEnum):
+class Flags(IntEnum):
     """
     Inotify flags as defined in ``inotify.h`` but with ``IN_`` prefix omitted.
 
@@ -276,6 +288,12 @@ class flags(IntEnum):
         return [flag for flag in cls.__members__.values() if flag & mask]
 
 
+# Changing the interface is not worth it
+# pylint: disable = invalid-name
+flags = Flags
+
+
+# pylint: disable = invalid-name
 class masks(IntEnum):
     """Convenience masks as defined in ``inotify.h`` but with ``IN_`` prefix omitted."""
 

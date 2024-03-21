@@ -10,6 +10,8 @@
 Tests for the file input mode for the file_system_monitor IOConfig.
 """
 
+from typing import Any
+
 import asyncio
 import logging
 import os
@@ -34,6 +36,8 @@ from tests.io.test_io_file_system_monitor.fs_test_utils import (
 # pylint: disable=invalid-name
 # for clarity, test functions should be named after the things they test
 # which means CamelCase in function names
+
+# pylint: disable=duplicate-code
 
 
 class TestFileTypeFSInputLinux(FileSystemTestUtilsDirEvents, FileSystemTestUtilsFileEvents):
@@ -203,7 +207,7 @@ class TestFileTypeFSInputLinux(FileSystemTestUtilsDirEvents, FileSystemTestUtils
     @pytest.mark.asyncio
     @pytest.mark.skipif(sys.platform.startswith("win"), reason="Linux (like) only test")
     async def test_FileTypeFSInput_existing_file_io_in_non_existing_file_linux(
-        self, caplog
+        self, caplog: Any
     ) -> None:
         """
         Start without  file, create it, append to it and loop - looking for ghost events.
