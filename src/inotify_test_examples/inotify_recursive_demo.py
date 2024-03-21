@@ -2,6 +2,7 @@
 Demos recursively watching a directory for changes with inotify recursive.
 """
 
+# pylint: disable=duplicate-code
 
 import os
 

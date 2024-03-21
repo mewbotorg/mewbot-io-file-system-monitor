@@ -5,6 +5,9 @@ It does not - this is because of a weirdness with how file systems are handled o
 
 """
 
+# pylint: disable=duplicate-code
+
+
 import os
 import time
 

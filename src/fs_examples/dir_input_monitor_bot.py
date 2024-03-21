@@ -13,7 +13,7 @@ Tools to support example which demonstrate watcing a directory in particular.
 
 from __future__ import annotations
 
-from typing import Any, AsyncIterable, Dict, Set, Type
+from typing import Any, Coroutine, Dict, Set, Type
 
 import logging
 
@@ -144,9 +144,9 @@ class DirSystemInputPrintResponse(Action):
         """
         return set()
 
-    async def act(
+    async def act(  # type: ignore
         self, event: InputEvent, state: Dict[str, Any]
-    ) -> AsyncIterable[OutputEvent]:
+    ) -> Coroutine[Any, Any, None]:
         """
         Construct a DiscordOutputEvent with the result of performing the calculation.
         """

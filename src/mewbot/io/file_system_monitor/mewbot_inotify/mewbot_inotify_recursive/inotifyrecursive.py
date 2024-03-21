@@ -209,7 +209,9 @@ class INotify(inotify_simple.INotify):
         return path
 
     def read(
-        self, timeout: Optional[int] = None, read_delay: Optional[int] = None
+        self,
+        timeout: Optional[int] | Optional[float] = None,
+        read_delay: Optional[int] = None,
     ) -> list[Event]:
         """
         Attempt to read inotify information out of the file descriptor.

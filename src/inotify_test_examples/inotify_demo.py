@@ -5,6 +5,7 @@ Conclusion: inotify is borked (on wsl).
 # inotify cannot (or should not) be installed on windows systems
 
 # pylint: disable = import-error
+# pylint: disable=duplicate-code
 import inotify.adapters  # type: ignore
 
 

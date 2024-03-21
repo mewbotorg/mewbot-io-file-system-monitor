@@ -4,7 +4,7 @@ Linux version of the notifier - using inotify.
 As this seems to be the a) most recent and b) the least on fire python inotify bindings library.
 """
 
-from typing import Any, Optional
+from typing import Any, Iterable, Optional
 
 import asyncio
 
@@ -91,7 +91,7 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
             if self.inotify is None:
                 return True
 
-    async def process_changes(self, changes: set[tuple[Any, str]]) -> bool:
+    async def process_changes(self, changes: Iterable[tuple[Any, str]]) -> bool:
         """
         Process events pulled from inotify.
 
@@ -127,6 +127,10 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
 
         :return:
         """
+        # Done as an assertion so it can be easily removed when automated efficiency improvements are done
+        assert (
+            self.input_path is not None
+        ), "input_path was None - this should never happen"  # nosec
 
         await self.send(
             FileUpdatedAtWatchLocationFSInputEvent(
@@ -143,6 +147,11 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
         :param inotify_file_del_event:
         :return:
         """
+        # Done as an assertion so it can be easily removed when automated efficiency improvements are done
+        assert (
+            self.input_path is not None
+        ), "input_path was None - this should never happen"  # nosec
+
         await self.send(
             FileDeletedFromWatchLocationFSInputEvent(
                 base_event=inotify_file_del_event, path=self.input_path
@@ -151,11 +160,11 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
 
         return True
 
-    def _trigger_shutdown(self, *args):
+    def _trigger_shutdown(self, *args: Any) -> None:
         """
         Poison pills the internal queue with None - which should trigger shutdown.
 
-        :param args:
+        :param args: Sorta doesn't matter what these are...
         :return:
         """
 
@@ -193,6 +202,9 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
             | flags.MOVE_SELF
             | flags.ISDIR
         )
+
+        if self._input_path_state.input_path is None:
+            raise NotImplementedError("Input path is unexpectedly none - cannot start")
 
         wd = inotify.add_watch(self._input_path_state.input_path, watch_flags)
 

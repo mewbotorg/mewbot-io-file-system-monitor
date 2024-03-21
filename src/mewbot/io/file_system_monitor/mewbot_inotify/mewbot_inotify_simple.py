@@ -283,7 +283,7 @@ class Flags(IntEnum):
     ONESHOT = 0x80000000  #: only send event once
 
     @classmethod
-    def from_mask(cls, mask):
+    def from_mask(cls, mask: int) -> list[int]:
         """Convenience method that returns a list of every flag in a mask."""
         return [flag for flag in cls.__members__.values() if flag & mask]
 

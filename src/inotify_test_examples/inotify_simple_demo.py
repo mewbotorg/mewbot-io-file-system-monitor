@@ -2,6 +2,9 @@
 This ... seems like it should just work.
 """
 
+# pylint: disable=duplicate-code
+
+
 import os
 
 from inotify_simple import INotify, flags  # type: ignore

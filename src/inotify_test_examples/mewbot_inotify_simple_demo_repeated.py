@@ -2,6 +2,9 @@
 This ... seems like it should just work.
 """
 
+# pylint: disable=duplicate-code
+
+
 import os
 
 from mewbot.io.file_system_monitor.mewbot_inotify.mewbot_inotify_simple import (
