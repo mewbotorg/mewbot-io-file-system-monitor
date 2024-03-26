@@ -10,7 +10,7 @@ As such, different classes are used for each of them.
 
 from __future__ import annotations
 
-from typing import Any, Optional, Union
+from typing import Any, Iterable, Optional, Union
 
 import asyncio
 import logging
@@ -146,6 +146,12 @@ class BaseLinuxFileSystemObserver:
             return False
         return True
 
+    def start_watcher_on_dir(self) -> None:
+        """
+        General interface for indicating that we need a watcher started.
+        """
+        raise NotImplementedError("You need to implement a watcher system.")
+
     async def send(self, event: FSInputEvent) -> None:
         """
         Responsible for putting events on the wire.
@@ -157,6 +163,12 @@ class BaseLinuxFileSystemObserver:
             return
 
         await self._output_queue.put(event)
+
+    async def _process_event_from_watched_dir(self, event: WatchdogFileSystemEvent) -> None:
+        """
+        Take an event and process it before putting it on the wire.
+        """
+        raise NotImplementedError("This needs to be implemented to process events.")
 
 
 class INotifyFileSystemObserver(BaseLinuxFileSystemObserver):
@@ -178,7 +190,7 @@ class INotifyFileSystemObserver(BaseLinuxFileSystemObserver):
 
         inotofy_task.add_done_callback(self._trigger_shutdown)
 
-    def _trigger_shutdown(self, *args):
+    def _trigger_shutdown(self, *args: Any) -> None:
         """
         Poison pills the internal queue with None - which should trigger shutdown.
 
@@ -222,7 +234,7 @@ class INotifyFileSystemObserver(BaseLinuxFileSystemObserver):
 
             # await self._process_event_from_watched_dir(new_event)
 
-    async def process_changes(self, changes: set[tuple[Any, str]]) -> bool:
+    async def process_changes(self, changes: Iterable[tuple[Any, Any]]) -> bool:
         """
         Process events pulled from inotify.
 
@@ -324,6 +336,7 @@ class INotifyFileSystemObserver(BaseLinuxFileSystemObserver):
                 base_event=inotify_file_delete_event, path=file_path
             )
         )
+        return True
 
     async def inotify_watcher(self) -> None:
         """
@@ -331,6 +344,9 @@ class INotifyFileSystemObserver(BaseLinuxFileSystemObserver):
 
         :return:
         """
+
+        if self._input_path is None:
+            raise NotImplementedError("This position should never be reached")
 
         await asyncio.sleep(2)
 
@@ -564,6 +580,7 @@ class WatchdogLinuxFileSystemObserver(BaseLinuxFileSystemObserver):
         :param event:
         :return:
         """
+        assert self._input_path is not None, "input path is None"  # nosec
 
         if pathlib.Path(event.src_path).resolve() == pathlib.Path(self._input_path):
             self._logger.info("Unexpected case in _process_dir_in_watched_dir_creation_event")
@@ -611,7 +628,12 @@ class WatchdogLinuxFileSystemObserver(BaseLinuxFileSystemObserver):
                 )
             )
 
-    async def _process_dir_move_event(self, event: watchdog.events.DirMovedEvent) -> None:
+    async def _process_dir_move_event(
+        self,
+        event: watchdog.events.FileSystemMovedEvent
+        | watchdog.events.FileSystemMovedEvent
+        | watchdog.events.DirMovedEvent,
+    ) -> None:
         """
         Aa directory has been moved - process the resulting event.
 

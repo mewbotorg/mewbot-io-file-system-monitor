@@ -8,9 +8,9 @@ This ... seems like it should just work.
 import os
 
 from mewbot.io.file_system_monitor.mewbot_inotify.mewbot_inotify_simple import (
-    INotify,  # type: ignore
+    INotify,
+    flags,
 )
-from mewbot.io.file_system_monitor.mewbot_inotify.mewbot_inotify_simple import flags
 
 os.system("rmdir /tmp/inotify_test")
 

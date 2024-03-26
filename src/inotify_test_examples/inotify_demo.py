@@ -9,7 +9,7 @@ Conclusion: inotify is borked (on wsl).
 import inotify.adapters  # type: ignore
 
 
-def _main():
+def _main() -> None:
     """
     Run inotify on the specified path.
 

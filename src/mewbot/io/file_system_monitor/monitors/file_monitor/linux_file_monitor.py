@@ -32,7 +32,7 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
     (And, not least, because watchfiles is broken on linux.
     """
 
-    internal_queue: asyncio.Queue = asyncio.Queue()
+    internal_queue: asyncio.Queue[Optional[Event]] = asyncio.Queue()
 
     inotify: Optional[INotify] = None
 
@@ -177,7 +177,7 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
         except RuntimeError:  # Can happen when the shutdown is not clean
             return
 
-    async def watch_file(self) -> None:
+    async def watch_file(self) -> Optional[bool]:
         """
         Pull events off the inotify observer and put them on the queue.
 
@@ -215,7 +215,10 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
         while True:
             # self._logger.info("In loop - pulling events")
 
-            events = tuple((event, event.name) for event in inotify.read(timeout=0.1))
+            try:
+                events = tuple((event, event.name) for event in inotify.read(timeout=0.1))
+            except IOError:
+                return False
 
             if events:
                 self._logger.info("Got events - %s", str(events))
@@ -230,6 +233,8 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
             await asyncio.sleep(0.1)
 
         self._logger.info("Ending inotify poll - %s", wd)
+
+        return None
 
 
 LinuxFileMonitorMixin = InotifyLinuxFileMonitorMixin

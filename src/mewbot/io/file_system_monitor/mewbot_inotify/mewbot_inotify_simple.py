@@ -26,7 +26,7 @@ Version of inotify simple, modified to be mypy compatible.
 """
 
 
-from typing import Generator, Optional
+from typing import Any, Callable, Generator, Optional
 
 import os
 from collections import namedtuple
@@ -36,22 +36,28 @@ from enum import IntEnum
 from errno import EINTR
 
 try:
-    from fcntl import ioctl as FCNTL_IOCTL
+    from fcntl import ioctl as FCNTL_IOCTL  # type: ignore
 except ModuleNotFoundError:
     FCNTL_IOCTL = None
 
 from io import FileIO
 from os import fsdecode, fsencode
 
+poll: Optional[Any] = None
 try:
-    from select import poll
+    from select import poll as select_poll
+
+    poll = select_poll
 except ImportError:
     poll = None
 
 from struct import calcsize, unpack_from
 
+FIONREAD: Optional[int] = None
 try:
-    from termios import FIONREAD
+    from termios import FIONREAD as terminos_fionread  # type: ignore
+
+    FIONREAD = terminos_fionread
 except ModuleNotFoundError:
     FIONREAD = None
 
@@ -64,7 +70,7 @@ __all__ = ["Event", "INotify", "flags", "masks", "parse_events"]
 _LIBC = None
 
 
-def _libc_call(function, *args):
+def _libc_call(function: Callable[[Any], int], *args: Any) -> int:
     """
     Wrapper which raises errors and retries on EINTR.
     """
@@ -175,7 +181,7 @@ class INotify(FileIO):
         _libc_call(_LIBC.inotify_rm_watch, self.fileno(), wd)
 
     def read(
-        self, timeout: Optional[int] = None, read_delay: Optional[int] = None
+        self, timeout: int | float | None = None, read_delay: Optional[int] = None
     ) -> Generator[Event, None, None]:
         """
         Read the inotify file descriptor and return the resulting namedtuples.

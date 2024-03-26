@@ -7,7 +7,7 @@ This ... seems like it should just work.
 
 import os
 
-from inotify_simple import INotify, flags  # type: ignore
+from inotify_simple import INotify, flags
 
 os.mkdir("/tmp/inotify_test")
 

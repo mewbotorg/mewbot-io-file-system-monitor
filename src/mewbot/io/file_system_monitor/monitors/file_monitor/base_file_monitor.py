@@ -7,7 +7,7 @@ from typing import Any, Optional
 import abc
 import logging
 
-import aiopath
+import aiopath  # type: ignore
 from mewbot.core import InputQueue
 
 from mewbot.io.file_system_monitor.fs_events import (

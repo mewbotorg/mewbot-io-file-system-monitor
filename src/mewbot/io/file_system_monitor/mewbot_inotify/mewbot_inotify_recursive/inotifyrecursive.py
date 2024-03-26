@@ -20,7 +20,7 @@
 Part of the internal mewbot version of inotifyrecursive.
 """
 
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 import logging
 import os
@@ -36,10 +36,15 @@ parse_events = inotify_simple.parse_events
 Event = inotify_simple.Event
 
 
+INotifyInfoType = dict[int, dict[str, Any]]
+
+
 class INotify(inotify_simple.INotify):
     """
     Recursive inotify monitor system.
     """
+
+    __info: INotifyInfoType
 
     def __init__(self) -> None:
         """
@@ -50,9 +55,14 @@ class INotify(inotify_simple.INotify):
         self.__cleanup_queue = []
 
     # Dealing with the too many arguments would involve excessive interface changes
-    def __add_info(
-        self, wd: int, name: str, mask: int, in_filter: bool, parent: int
-    ) -> None:  # pylint: disable=too-many-arguments
+    def __add_info(  # pylint: disable=too-many-arguments
+        self,
+        wd: int,
+        name: str,
+        mask: int,
+        in_filter: Callable[[str, int, bool], bool] | None,
+        parent: int,
+    ) -> None:
         self.__info[wd] = {
             "children": {},
             "filter": in_filter,
@@ -82,7 +92,7 @@ class INotify(inotify_simple.INotify):
         self.__info[wd]["parent"] = parent
         if parent != -1:
             self.__info[parent]["children"][name] = wd
-        logging.debug("Updated info for watch %d: %s" % (wd, self.__info[wd]))
+        logging.debug("Updated info for watch %d: %s", wd, self.__info[wd])
 
     def __rm_info(self, wd: int) -> None:
         """
@@ -105,7 +115,7 @@ class INotify(inotify_simple.INotify):
         name: str,
         parent: int,
         loose: bool = True,
-    ) -> None:
+    ) -> int | None:
         """
         Recursively add a dir and all it's subfolders.
 
