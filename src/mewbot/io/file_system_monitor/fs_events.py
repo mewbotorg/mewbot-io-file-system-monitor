@@ -54,7 +54,7 @@ class FileAtWatchLocInputEvent(FSInputEvent):
     Base class for file related input events - generated when a file is being watched for changes.
     """
 
-    path: str
+    path: str | bytes
 
 
 @dataclasses.dataclass
@@ -63,7 +63,7 @@ class FileCreatedAtWatchLocationFSInputEvent(FileAtWatchLocInputEvent):
     A file has been created on the system within a dir being monitored.
     """
 
-    origin: str = ""
+    origin: str | bytes = ""
 
 
 @dataclasses.dataclass
@@ -72,7 +72,7 @@ class FileUpdatedAtWatchLocationFSInputEvent(FileAtWatchLocInputEvent):
     A file has been updated at the location being watched.
     """
 
-    origin: str = ""
+    origin: str | bytes = ""
 
 
 @dataclasses.dataclass
@@ -81,7 +81,7 @@ class FileDeletedFromWatchLocationFSInputEvent(FileAtWatchLocInputEvent):
     A file has been deleted from the location being watched.
     """
 
-    origin: str = ""
+    origin: str | bytes = ""
 
 
 # - DIR AT LOCATION
@@ -93,7 +93,7 @@ class DirAtWatchLocInputEvent(FSInputEvent):
     Base class for file related input events - generated when a file is being watched for changes.
     """
 
-    path: str
+    path: str | bytes
 
 
 @dataclasses.dataclass
@@ -102,7 +102,7 @@ class DirCreatedAtWatchLocationFSInputEvent(DirAtWatchLocInputEvent):
     A directory has been created on the system within a dir being monitored.
     """
 
-    origin: str = ""
+    origin: str | bytes = ""
 
 
 @dataclasses.dataclass
@@ -111,7 +111,7 @@ class DirUpdatedAtWatchLocationFSInputEvent(DirAtWatchLocInputEvent):
     A dir has been updated at the location being watched.
     """
 
-    origin: str = ""
+    origin: str | bytes = ""
 
 
 @dataclasses.dataclass
@@ -120,9 +120,9 @@ class DirMovedToWatchLocationFSInputEvent(DirAtWatchLocInputEvent):
     A dir has been moved to the location being watched.
     """
 
-    file_src: str
+    file_src: str | bytes
 
-    origin: str = ""
+    origin: str | bytes = ""
 
 
 @dataclasses.dataclass
@@ -131,9 +131,9 @@ class DirMovedFromWatchLocationFSInputEvent(DirAtWatchLocInputEvent):
     A dir has been moved away from the location being watched.
     """
 
-    file_src: str
+    file_src: str | bytes
 
-    origin: str = ""
+    origin: str | bytes = ""
 
 
 @dataclasses.dataclass
@@ -142,7 +142,7 @@ class DirDeletedFromWatchLocationFSInputEvent(DirAtWatchLocInputEvent):
     A dir has been deleted from the location being watched.
     """
 
-    origin: str = ""
+    origin: str | bytes = ""
 
 
 # - WITHIN THE DIR AT LOCATION
@@ -154,7 +154,7 @@ class WithinDirAtWatchLocInputEvent(DirAtWatchLocInputEvent):
     Base class for file related input events - generated when a file is being watched for changes.
     """
 
-    path: str
+    path: str | bytes
 
 
 @dataclasses.dataclass
@@ -163,7 +163,7 @@ class FileCreatedWithinWatchedDirFSInputEvent(WithinDirAtWatchLocInputEvent):
     A file has been created on the system within a dir being monitored.
     """
 
-    origin: str = ""
+    origin: str | bytes = ""
 
 
 @dataclasses.dataclass
@@ -172,7 +172,7 @@ class FileUpdatedWithinWatchedDirFSInputEvent(WithinDirAtWatchLocInputEvent):
     A file has been updated at the location being watched.
     """
 
-    origin: str = ""
+    origin: str | bytes = ""
 
 
 @dataclasses.dataclass
@@ -181,10 +181,10 @@ class FileMovedWithinWatchedDirFSInputEvent(WithinDirAtWatchLocInputEvent):
     A file has been moved to the location being watched.
     """
 
-    file_src: str
-    file_dst: str
+    file_src: str | bytes
+    file_dst: str | bytes
 
-    origin: str = ""
+    origin: str | bytes = ""
 
 
 @dataclasses.dataclass
@@ -193,9 +193,9 @@ class FileMovedOutsideWatchedDirFSInputEvent(WithinDirAtWatchLocInputEvent):
     A file has been moved to the location being watched.
     """
 
-    file_src: str
+    file_src: str | bytes
 
-    origin: str = ""
+    origin: str | bytes = ""
 
 
 @dataclasses.dataclass
@@ -204,7 +204,7 @@ class FileDeletedWithinWatchedDirFSInputEvent(WithinDirAtWatchLocInputEvent):
     A file has been deleted from the location being watched.
     """
 
-    origin: str = ""
+    origin: str | bytes = ""
 
 
 # - DIR AT LOCATION
@@ -216,7 +216,7 @@ class DirCreatedWithinWatchedDirFSInputEvent(WithinDirAtWatchLocInputEvent):
     A directory has been created on the system within a dir being monitored.
     """
 
-    origin: str = ""
+    origin: str | bytes = ""
 
 
 @dataclasses.dataclass
@@ -225,7 +225,7 @@ class DirUpdatedWithinWatchedDirFSInputEvent(WithinDirAtWatchLocInputEvent):
     A dir has been updated at the location being watched.
     """
 
-    origin: str = ""
+    origin: str | bytes = ""
 
 
 @dataclasses.dataclass
@@ -234,10 +234,10 @@ class DirMovedWithinWatchedDirFSInputEvent(WithinDirAtWatchLocInputEvent):
     A dir has been moved to the location being watched.
     """
 
-    dir_src_path: Union[str, Path]
-    dir_dst_path: Union[str, Path]
+    dir_src_path: Union[str, Path, bytes]
+    dir_dst_path: Union[str, Path, bytes]
 
-    origin: str = ""
+    origin: str | bytes = ""
 
 
 @dataclasses.dataclass
@@ -246,10 +246,10 @@ class DirMovedOutOfWatchedDirFSInputEvent(WithinDirAtWatchLocInputEvent):
     A dir has been moved to the location being watched.
     """
 
-    dir_src_path: Union[str, Path]
-    dir_dst_path: Union[str, Path]
+    dir_src_path: Union[str, Path, bytes]
+    dir_dst_path: Union[str, Path, bytes]
 
-    origin: str = ""
+    origin: str | bytes = ""
 
 
 @dataclasses.dataclass
@@ -259,4 +259,4 @@ class DirDeletedFromWatchedDirFSInputEvent(WithinDirAtWatchLocInputEvent):
     """
 
     # Used during debug - where and how was the event generated
-    origin: str = ""
+    origin: str | bytes = ""

@@ -644,14 +644,14 @@ class FileSystemTestUtilsFileEvents(GeneralUtils):
                 f" - {message}" if message else ""
             )
             assert file_path == input_event.path, (
-                f"file path does not match expected - wanted {file_path}, "
-                f"got {input_event.path}"
+                f"file path does not match expected - wanted {file_path!r}, "
+                f"got {input_event.path!r}"
             )
         else:
             assert isinstance(
                 input_event, FileDeletedFromWatchLocationFSInputEvent
-            ), f"expected DeletedFileFSInputEvent - got {input_event}" + (
-                f" - {message}" if message else ""
+            ), f"expected DeletedFileFSInputEvent - got {input_event!r}" + (
+                f" - {message!r}" if message else ""
             )
 
 
@@ -843,7 +843,7 @@ class FileSystemTestUtilsDirEvents(GeneralUtils):
         if dir_path is not None:
             assert (
                 input_event.path == dir_path
-            ), f"expected {dir_path} - got {input_event.path}"
+            ), f"expected {dir_path!r} - got {input_event.path!r}"
 
     @staticmethod
     def validate_dir_update_input_event_of_watched_dir(
@@ -867,7 +867,7 @@ class FileSystemTestUtilsDirEvents(GeneralUtils):
         if dir_path is not None:
             assert (
                 input_event.path == dir_path
-            ), f"expected {dir_path} - got {input_event.path}"
+            ), f"expected {dir_path!r} - got {input_event.path!r}"
 
     async def process_input_file_creation_response(
         self, output_queue: asyncio.Queue[InputEvent], file_path: str = "", message: str = ""
@@ -927,8 +927,8 @@ class FileSystemTestUtilsDirEvents(GeneralUtils):
         )
         if dir_path:
             assert input_event.path == dir_path, (
-                f"dir_path is not as expected - theo - {dir_path} - "
-                f"actual {input_event.path}" + (message if message else "")
+                f"dir_path is not as expected - theo - {dir_path!r} - "
+                f"actual {input_event.path!r}" + (message if message else "")
             )
 
     async def process_dir_move_queue_response(
@@ -1026,4 +1026,4 @@ class FileSystemTestUtilsDirEvents(GeneralUtils):
         if file_path:
             assert (
                 input_event.path == file_path
-            ), f"File path was not as expected - expected {file_path} - got {input_event.path}"
+            ), f"File path was not as expected - expected {file_path!r} - got {input_event.path!r}"

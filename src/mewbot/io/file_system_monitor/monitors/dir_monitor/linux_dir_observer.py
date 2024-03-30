@@ -8,6 +8,9 @@ Monitoring a directory for changes and monitoring a file for changes are very di
 As such, different classes are used for each of them.
 """
 
+# The code for observing files and dirs is very similar, but the flags are different
+# pylint: disable=duplicate-code
+
 from __future__ import annotations
 
 from typing import Any, Iterable, Optional, Union

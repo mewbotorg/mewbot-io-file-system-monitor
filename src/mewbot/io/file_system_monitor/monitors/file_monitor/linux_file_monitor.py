@@ -4,6 +4,8 @@ Linux version of the notifier - using inotify.
 As this seems to be the a) most recent and b) the least on fire python inotify bindings library.
 """
 
+# pylint: disable=duplicate-code
+
 from typing import Any, Iterable, Optional
 
 import asyncio

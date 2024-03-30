@@ -20,7 +20,7 @@
 Part of the internal mewbot version of inotifyrecursive.
 """
 
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, TypedDict
 
 import logging
 import os
@@ -36,7 +36,16 @@ parse_events = inotify_simple.parse_events
 Event = inotify_simple.Event
 
 
-INotifyInfoType = dict[int, dict[str, Any]]
+class InotifyTypedDict(TypedDict):
+    """
+    Typed dict for the internal cache which stores inotify data for recursion.
+    """
+
+    children: dict[int, "InotifyTypedDict"]
+    filter: int
+    mask: int
+    name: str | bytes
+    parent: int
 
 
 class INotify(inotify_simple.INotify):
@@ -44,7 +53,9 @@ class INotify(inotify_simple.INotify):
     Recursive inotify monitor system.
     """
 
-    __info: INotifyInfoType
+    __info: dict[int, dict[str, Any]]
+
+    __cleanup_queue: list[int]
 
     def __init__(self) -> None:
         """
@@ -58,9 +69,9 @@ class INotify(inotify_simple.INotify):
     def __add_info(  # pylint: disable=too-many-arguments
         self,
         wd: int,
-        name: str,
+        name: str | bytes,
         mask: int,
-        in_filter: Callable[[str, int, bool], bool] | None,
+        in_filter: Callable[[str | bytes, int, bool], bool] | None,
         parent: int,
     ) -> None:
         self.__info[wd] = {
@@ -83,7 +94,7 @@ class INotify(inotify_simple.INotify):
             self.__rm_info(wd)
         self.__cleanup_queue = []
 
-    def __set_info(self, wd: int, name: str, parent: int) -> None:
+    def __set_info(self, wd: int, name: str | bytes, parent: int) -> None:
         old_parent = self.__info[wd]["parent"]
         if old_parent != -1:
             old_name = self.__info[wd]["name"]
@@ -109,10 +120,10 @@ class INotify(inotify_simple.INotify):
 
     def __add_watch_recursive(
         self,
-        path: str,
+        path: str | bytes,
         mask: int,
-        filter: Optional[Callable[[str, int, bool], bool]],
-        name: str,
+        filter: Optional[Callable[[str | bytes, int, bool], bool]],
+        name: str | bytes,
         parent: int,
         loose: bool = True,
     ) -> int | None:
@@ -130,7 +141,7 @@ class INotify(inotify_simple.INotify):
         try:
             if filter is not None and not filter(name, parent, True):
                 logging.debug("Name has been filtered, not adding watch: %s", name)
-                return
+                return None
             wd = inotify_simple.INotify.add_watch(
                 self,
                 path,
@@ -144,14 +155,14 @@ class INotify(inotify_simple.INotify):
             else:
                 self.__add_info(wd, name, mask, filter, parent)
                 for entry in os.listdir(path):
-                    entrypath = os.path.join(path, entry)
+                    entrypath = os.path.join(path, entry)  # type: ignore
                     if os.path.isdir(entrypath):
                         self.__add_watch_recursive(entrypath, mask, filter, entry, wd)
             return wd
         except OSError as e:
             if loose and e.errno == 2:
                 logging.debug("Cannot add watch, path not found: %s", path)
-                return
+                return None
             else:
                 raise
 
@@ -179,10 +190,10 @@ class INotify(inotify_simple.INotify):
 
     def add_watch_recursive(
         self,
-        path: str | bytes | os.PathLike,
+        path: str | bytes,
         mask: int,
-        filter: Optional[Callable[[str, int, bool], bool]] = None,
-    ):
+        filter: Optional[Callable[[str | bytes, int, bool], bool]] = None,
+    ) -> int | None:
         """
         Recursively add a watch - adding a watch for every sub-dir in the tree.
 
@@ -203,7 +214,7 @@ class INotify(inotify_simple.INotify):
         """
         self.__rm_watch_recursive(wd, False)
 
-    def get_path(self, wd: int) -> str:
+    def get_path(self, wd: int) -> str | bytes:
         """
         Get the originating path from the wd.
 
@@ -216,9 +227,12 @@ class INotify(inotify_simple.INotify):
             wd = parent
             path = os.path.join(self.__info[wd]["name"], path)
             parent = self.__info[wd]["parent"]
+        assert isinstance(path, str) or isinstance(path, bytes), "keep mypy happy"
         return path
 
-    def read(
+    # I would not have overridden and added a timeout - but changing it would require
+    # rearchitecting the underlying package to an unacceptable degree
+    def read(  # type: ignore
         self,
         timeout: Optional[int] | Optional[float] = None,
         read_delay: Optional[int] = None,
@@ -232,7 +246,7 @@ class INotify(inotify_simple.INotify):
         """
         self.__clr_infos()
         events = []
-        moved_from = {}
+        moved_from: dict[int, int] = {}
         for event in inotify_simple.INotify.read(
             self, timeout=timeout, read_delay=read_delay
         ):

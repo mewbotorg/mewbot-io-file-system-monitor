@@ -24,16 +24,17 @@
 """
 Version of inotify simple, modified to be mypy compatible.
 """
-
-
-from typing import Any, Callable, Generator, Optional
+from typing import Any, Callable, Optional
 
 import os
+import pathlib
 from collections import namedtuple
 from ctypes import CDLL, c_int, get_errno
 from ctypes.util import find_library
 from enum import IntEnum
 from errno import EINTR
+from struct import calcsize, unpack_from
+from time import sleep
 
 try:
     from fcntl import ioctl as FCNTL_IOCTL  # type: ignore
@@ -43,15 +44,14 @@ except ModuleNotFoundError:
 from io import FileIO
 from os import fsdecode, fsencode
 
-poll: Optional[Any] = None
+POLL: Optional[Any] = None
 try:
     from select import poll as select_poll
 
-    poll = select_poll
+    POLL = select_poll
 except ImportError:
-    poll = None
+    POLL = None
 
-from struct import calcsize, unpack_from
 
 FIONREAD: Optional[int] = None
 try:
@@ -61,7 +61,6 @@ try:
 except ModuleNotFoundError:
     FIONREAD = None
 
-from time import sleep
 
 __version__ = "1.3.5"
 
@@ -101,7 +100,7 @@ class INotify(FileIO):
     Also, available as :func:`~inotify_simple.INotify.fileno`
     """
 
-    fd: int = property(FileIO.fileno)
+    fd: property = property(FileIO.fileno)
 
     def __init__(self, inheritable: bool = False, nonblocking: bool = False) -> None:
         """
@@ -142,10 +141,13 @@ class INotify(FileIO):
         # pylint: disable=no-member
         current_flags = (not inheritable) * zero_cloexec | bool(nonblocking) * os.O_NONBLOCK
         FileIO.__init__(self, _libc_call(_LIBC.inotify_init1, current_flags), mode="rb")
-        self._poller = poll()
+
+        assert POLL is not None, "this position should never be reached"
+
+        self._poller = POLL()
         self._poller.register(self.fileno())
 
-    def add_watch(self, path: str | bytes | os.PathLike, mask: int) -> int:
+    def add_watch(self, path: str | bytes | pathlib.Path, mask: int) -> int:
         """
         Calls the underlying c library to add a watch on a particular path.
 
@@ -163,6 +165,8 @@ class INotify(FileIO):
         Returns:
             int: watch descriptor
         """
+        assert _LIBC is not None, "_LIBC was, unexpectedly, None"
+
         # Explicit conversion of Path to str required on Python < 3.6
         path = str(path) if hasattr(path, "parts") else path
         return _libc_call(_LIBC.inotify_add_watch, self.fileno(), fsencode(path), mask)
@@ -178,11 +182,14 @@ class INotify(FileIO):
         Args:
             wd (int): The watch descriptor to remove
         """
+        assert _LIBC is not None, "_LIBC was, unexpectedly, None"
+
         _libc_call(_LIBC.inotify_rm_watch, self.fileno(), wd)
 
-    def read(
+    # I would not have subclass read and change the interface ...
+    def read(  # type: ignore
         self, timeout: int | float | None = None, read_delay: Optional[int] = None
-    ) -> Generator[Event, None, None]:
+    ) -> list[Event]:
         """
         Read the inotify file descriptor and return the resulting namedtuples.
 

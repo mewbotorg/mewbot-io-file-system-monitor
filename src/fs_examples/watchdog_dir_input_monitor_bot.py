@@ -18,11 +18,11 @@ if __name__ == "__main__":
     logging.info("start watching directory %s", path)
     event_handler = LoggingEventHandler()
     observer = Observer()
-    observer.schedule(event_handler, path, recursive=True)
-    observer.start()
+    observer.schedule(event_handler, path, recursive=True)  # type: ignore
+    observer.start()  # type: ignore
     try:
         while True:
             time.sleep(1)
     finally:
-        observer.stop()
+        observer.stop()  # type: ignore
         observer.join()
