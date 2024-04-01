@@ -258,7 +258,8 @@ def parse_events(data: bytes) -> list[Event]:
     while pos < len(data):
         wd, mask, cookie, namesize = unpack_from(_EVENT_FMT, data, pos)
         pos += _EVENT_SIZE + namesize
-        name = data[pos - namesize : pos].split(b"\x00", 1)[0]
+        data_pos = pos - namesize
+        name = data[data_pos:pos].split(b"\x00", 1)[0]
         events.append(Event(wd, mask, cookie, fsdecode(name)))
     return events
 

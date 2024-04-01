@@ -203,10 +203,11 @@ class TestFileTypeFSInputLinux(FileSystemTestUtilsDirEvents, FileSystemTestUtils
                 event_type=FileCreatedAtWatchLocationFSInputEvent,
             )
 
+    # flake8 does not like the complexity level of this test
     # pylint: disable=too-many-statements
     @pytest.mark.asyncio
     @pytest.mark.skipif(sys.platform.startswith("win"), reason="Linux (like) only test")
-    async def test_FileTypeFSInput_existing_file_io_in_non_existing_file_linux(
+    async def test_FileTypeFSInput_existing_file_io_in_non_existing_file_linux(  # noqa
         self, caplog: Any
     ) -> None:
         """

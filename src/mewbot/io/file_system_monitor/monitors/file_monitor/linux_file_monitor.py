@@ -19,12 +19,9 @@ from mewbot.io.file_system_monitor.mewbot_inotify.mewbot_inotify_recursive impor
     INotify,
     flags,
 )
-from mewbot.io.file_system_monitor.mewbot_inotify.mewbot_inotify_simple import flags
 from mewbot.io.file_system_monitor.monitors.file_monitor.base_file_monitor import (
     BaseFileMonitor,
 )
-
-# Todo: Put the watchdog version here as well
 
 
 class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
@@ -73,7 +70,7 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
             await asyncio.sleep(0.1)
             try:
                 target_event = await self.internal_queue.get()
-            except Exception as e:
+            except asyncio.TimeoutError as e:
                 self._logger.info("Exception when pulling from internal queue - %s", e)
                 continue
 
@@ -103,9 +100,9 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
         for change in changes:
             inotify_event = change[0]
 
-            event_flags = {_ for _ in flags.from_mask(inotify_event.mask)}
+            event_flags = set(flags.from_mask(inotify_event.mask))
 
-            if event_flags == {flags.MODIFY} or event_flags == {flags.ATTRIB}:
+            if event_flags in ({flags.MODIFY}, {flags.ATTRIB}):
                 await self._process_file_modification_event(inotify_event)
                 continue
 
@@ -123,13 +120,23 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
         # No shutdown events where detected
         return False
 
+    async def do_delete_event(self, change_path: str, raw_change: tuple[Any, str]) -> None:
+        """
+        Legacy interface.
+
+        :param change_path:
+        :param raw_change:
+        :return:
+        """
+        raise NotImplementedError("Not needed on voyage.")
+
     async def _process_file_modification_event(self, inotify_file_mod_event: Event) -> bool:
         """
         Process a file modification event.
 
         :return:
         """
-        # Done as an assertion so it can be easily removed when automated efficiency improvements are done
+        # Done as an assertion so it can be easily removed by automated efficiency improvements
         assert (
             self.input_path is not None
         ), "input_path was None - this should never happen"  # nosec
@@ -149,7 +156,7 @@ class InotifyLinuxFileMonitorMixin(BaseFileMonitor):
         :param inotify_file_del_event:
         :return:
         """
-        # Done as an assertion so it can be easily removed when automated efficiency improvements are done
+        # Done as an assertion so it can be easily removed by automated efficiency improvements
         assert (
             self.input_path is not None
         ), "input_path was None - this should never happen"  # nosec

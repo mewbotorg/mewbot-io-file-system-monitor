@@ -572,7 +572,7 @@ class TestDirTypeFSInputGenericTests(
             await self.cancel_task(run_task)
 
     @pytest.mark.asyncio
-    async def testDirTypeFSInput_existing_dir_create_move_dir_loop(self) -> None:
+    async def testDirTypeFSInput_existing_dir_create_move_dir_loop(self) -> None:  # noqa
         """
         Create a directory in a monitored dir, then move it in a loop.
 

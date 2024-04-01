@@ -116,13 +116,13 @@ class INotify(inotify_simple.INotify):
         parent = self.__info[wd]["parent"]
         del self.__info[parent]["children"][name]
         del self.__info[wd]
-        logging.debug("Removed info for watch %d" % wd)
+        logging.debug("Removed info for watch %d", wd)
 
-    def __add_watch_recursive(
+    def __add_watch_recursive(  # pylint: disable = too-many-arguments # noqa
         self,
         path: str | bytes,
         mask: int,
-        filter: Optional[Callable[[str | bytes, int, bool], bool]],
+        local_filter: Optional[Callable[[str | bytes, int, bool], bool]],
         name: str | bytes,
         parent: int,
         loose: bool = True,
@@ -132,14 +132,14 @@ class INotify(inotify_simple.INotify):
 
         :param path:
         :param mask:
-        :param filter:
+        :param local_filter:
         :param name:
         :param parent:
         :param loose:
         :return:
         """
         try:
-            if filter is not None and not filter(name, parent, True):
+            if local_filter is not None and not local_filter(name, parent, True):
                 logging.debug("Name has been filtered, not adding watch: %s", name)
                 return None
             wd = inotify_simple.INotify.add_watch(
@@ -147,24 +147,23 @@ class INotify(inotify_simple.INotify):
                 path,
                 mask | flags.IGNORED | flags.CREATE | flags.MOVED_FROM | flags.MOVED_TO,
             )
-            logging.debug("Added watch %d" % wd)
+            logging.debug("Added watch %d", wd)
             if parent == -1:
                 name = path
             if wd in self.__info:
                 self.__set_info(wd, name, parent)
             else:
-                self.__add_info(wd, name, mask, filter, parent)
+                self.__add_info(wd, name, mask, local_filter, parent)
                 for entry in os.listdir(path):
                     entrypath = os.path.join(path, entry)  # type: ignore
                     if os.path.isdir(entrypath):
-                        self.__add_watch_recursive(entrypath, mask, filter, entry, wd)
+                        self.__add_watch_recursive(entrypath, mask, local_filter, entry, wd)
             return wd
         except OSError as e:
             if loose and e.errno == 2:
                 logging.debug("Cannot add watch, path not found: %s", path)
                 return None
-            else:
-                raise
+            raise
 
     def __rm_watch_recursive(self, wd: int, loose: bool = True) -> None:
         """
@@ -180,30 +179,29 @@ class INotify(inotify_simple.INotify):
                 for name in children:
                     self.__rm_watch_recursive(children[name])
                 inotify_simple.INotify.rm_watch(self, wd)
-                logging.debug("Removed watch %d" % wd)
+                logging.debug("Removed watch %d", wd)
         except OSError as e:
             if loose and e.errno == 22:
-                logging.debug("Cannot remove watch, descriptor does not exist: %d" % wd)
+                logging.debug("Cannot remove watch, descriptor does not exist: %d", wd)
                 return
-            else:
-                raise
+            raise
 
     def add_watch_recursive(
         self,
         path: str | bytes,
         mask: int,
-        filter: Optional[Callable[[str | bytes, int, bool], bool]] = None,
+        local_filter: Optional[Callable[[str | bytes, int, bool], bool]] = None,
     ) -> int | None:
         """
         Recursively add a watch - adding a watch for every sub-dir in the tree.
 
         :param path:
         :param mask:
-        :param filter:
+        :param local_filter:
         :return:
         """
         name = os.path.split(path)[1]
-        return self.__add_watch_recursive(path, mask, filter, name, -1, False)
+        return self.__add_watch_recursive(path, mask, local_filter, name, -1, False)
 
     def rm_watch_recursive(self, wd: int) -> None:
         """
@@ -227,12 +225,13 @@ class INotify(inotify_simple.INotify):
             wd = parent
             path = os.path.join(self.__info[wd]["name"], path)
             parent = self.__info[wd]["parent"]
-        assert isinstance(path, str) or isinstance(path, bytes), "keep mypy happy"
+        assert isinstance(path, (bytes, str)), "keep mypy happy"
         return path
 
     # I would not have overridden and added a timeout - but changing it would require
     # rearchitecting the underlying package to an unacceptable degree
-    def read(  # type: ignore
+    # Also - fake8 does not like the level of complexity of this functon...
+    def read(  # type: ignore  # noqa
         self,
         timeout: Optional[int] | Optional[float] = None,
         read_delay: Optional[int] = None,
@@ -253,12 +252,12 @@ class INotify(inotify_simple.INotify):
             if event.wd in self.__info:
                 info = self.__info[event.wd]
                 mask = info["mask"]
-                filter = info["filter"]
-                if filter is not None and not filter(
+                local_filter = info["filter"]
+                if local_filter is not None and not local_filter(
                     event.name, event.wd, event.mask & flags.ISDIR
                 ):
                     logging.debug(
-                        "Name has been filtered, not processing event: %s" % event.name
+                        "Name has been filtered, not processing event: %s", event.name
                     )
                     continue
                 if event.mask & flags.ISDIR:
@@ -274,14 +273,15 @@ class INotify(inotify_simple.INotify):
                             moved_from[event.cookie] = info["children"][event.name]
                         except KeyError:
                             logging.debug(
-                                "%s no longer present in %s" % (event.name, info["children"])
+                                "%s no longer present in %s", event.name, info["children"]
                             )
+
                 elif event.mask & flags.IGNORED:
                     self.__clr_info(event.wd)
                 if event.mask & mask:
                     events.append(event)
             else:
                 events.append(event)
-        for cookie in moved_from:
+        for cookie in moved_from:  # pylint: disable=consider-using-dict-items
             self.rm_watch_recursive(moved_from[cookie])
         return events

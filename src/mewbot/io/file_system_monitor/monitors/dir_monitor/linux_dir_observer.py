@@ -44,7 +44,6 @@ from mewbot.io.file_system_monitor.mewbot_inotify.mewbot_inotify_recursive impor
     INotify,
     flags,
 )
-from mewbot.io.file_system_monitor.mewbot_inotify.mewbot_inotify_simple import flags
 from mewbot.io.file_system_monitor.monitors.dir_monitor.event_handler import (
     MewbotEventHandler,
 )
@@ -252,7 +251,7 @@ class INotifyFileSystemObserver(BaseLinuxFileSystemObserver):
             print(self.inotify.get_path(wd))
             print(inotify_event)
 
-            event_flags = {_ for _ in flags.from_mask(inotify_event.mask)}
+            event_flags = set(flags.from_mask(inotify_event.mask))
 
             # We have created a file
             if event_flags == {flags.CREATE}:
@@ -267,9 +266,18 @@ class INotifyFileSystemObserver(BaseLinuxFileSystemObserver):
             if event_flags == {flags.DELETE}:
                 return await self._process_file_delete_event(inotify_event)
 
-            assert True is False, event_flags
+            self._logger.error("Flags not recognized - having to ignore - %s", event_flags)
 
         return False
+
+    async def _process_event_from_watched_dir(self, event: WatchdogFileSystemEvent) -> None:
+        """
+        An event has been detected within a watched dir.
+
+        :param event:
+        :return:
+        """
+        raise NotImplementedError("This position should never be reached.")
 
     async def _process_file_creation_event(self, inotify_file_create_event: Event) -> bool:
         """
